@@ -302,10 +302,12 @@ body{margin:0}[hidden]{display:none!important}
       <dl class="conv" id="conv"></dl>
       <div id="warns" class="full"></div>
       <hr class="full">
-      <div class="stack full">
-        <p class="group-title">Cálculo paso a paso</p>
-        <ol class="steps" id="steps"></ol>
-      </div>
+      <details class="fx full">
+        <summary class="group-title">Cálculo paso a paso</summary>
+        <div class="stack">
+          <ol class="steps" id="steps"></ol>
+        </div>
+      </details>
       <div class="actions full">
         <button class="btn solid" id="copy" type="button">Copiar resultado</button>
         <button class="btn" id="copy-xls" type="button">Copiar tabla para Excel</button>
