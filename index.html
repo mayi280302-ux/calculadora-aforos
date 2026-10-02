@@ -6,84 +6,135 @@
 <title>Calculadora de Aforos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: libreta de campo — métodos en pestañas; la cartera de molinete ocupa todo el ancho, los demás métodos usan datos a la izquierda y resultado a la derecha */
+/* Layout: móvil primero — una columna con pasos claros y barra de caudal fija abajo; en escritorio, datos a la izquierda y resultado a la derecha.
+   COLORES DE MARCA: cambiar solo --brand, --brand-2 y --brand-soft para aplicar la paleta institucional. */
 :root {
-  --bg: #f2f5f4;
+  --brand: #177a34;        /* verde AURPA (letras del logo) */
+  --brand-2: #7b951d;      /* verde oliva AURPA (círculo del logo) */
+  --brand-soft: #e6f3e2;   /* fondo suave del verde */
+  --river: #2a7fb0;        /* espejo de agua en el gráfico */
+  --bg: #f5f7f0;
   --surface: #ffffff;
-  --ink: #15292b;
-  --muted: #5b6f70;
-  --line: #d3dedc;
-  --accent: #0d6e74;
-  --accent-soft: #dcefee;
-  --water: #cfe8f3;
-  --bed: #7f4f24;
-  --point: #c0262d;
-  --input-bg: #fffbe8;
-  --warn: #a35a00;
-  --warn-soft: #fbefdc;
-  --font-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
-  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --ink: #1c2a1e;
+  --muted: #627064;
+  --line: #dfe6d8;
+  --water: #d6eaf3;
+  --bed: #8a5a2b;
+  --point: #c73a32;
+  --input-bg: #fbfcfb;
+  --warn: #9a5800;
+  --warn-soft: #fdf1df;
+  --on-brand: #ffffff;
+  --font-body: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --radius: 14px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0f1a1b; --surface: #162426; --ink: #e3eeec; --muted: #93a8a7; --line: #2a3d3f;
-    --accent: #4fc1c6; --accent-soft: #173a3c; --water: #183f4d; --bed: #c79a6c; --point: #ff6b70;
-    --input-bg: #262a1c; --warn: #f0b05a; --warn-soft: #3a2a12; color-scheme: dark;
+    --brand: #4cc46a; --brand-2: #b3c84a; --brand-soft: #18341f; --river: #5bb4e0;
+    --bg: #10170f; --surface: #182219; --ink: #e5eee3; --muted: #98a896; --line: #2a3729;
+    --water: #173b4d; --bed: #c99a6a; --point: #ff7a70; --input-bg: #121a12;
+    --warn: #f0b05a; --warn-soft: #3a2a12; --on-brand: #0f170e; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0f1a1b; --surface: #162426; --ink: #e3eeec; --muted: #93a8a7; --line: #2a3d3f;
-  --accent: #4fc1c6; --accent-soft: #173a3c; --water: #183f4d; --bed: #c79a6c; --point: #ff6b70;
-  --input-bg: #262a1c; --warn: #f0b05a; --warn-soft: #3a2a12; color-scheme: dark;
+  --brand: #4cc46a; --brand-2: #b3c84a; --brand-soft: #18341f; --river: #5bb4e0;
+  --bg: #10170f; --surface: #182219; --ink: #e5eee3; --muted: #98a896; --line: #2a3729;
+  --water: #173b4d; --bed: #c99a6a; --point: #ff7a70; --input-bg: #121a12;
+  --warn: #f0b05a; --warn-soft: #3a2a12; --on-brand: #0f1714; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
-.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: flex; flex-direction: column; gap: 20px; }
-header h1 { font-family: var(--font-display); font-weight: 700; font-size: 2rem; margin: 0; letter-spacing: .01em; text-wrap: balance; }
-header p { margin: 4px 0 0; color: var(--muted); max-width: 62ch; }
-.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
-.tab { font: 600 .95rem var(--font-display); letter-spacing: .03em; text-transform: uppercase; padding: 8px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 6px; cursor: pointer; }
-.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
-.tab:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
-.grid.wide { grid-template-columns: minmax(0, 1fr); }
-@media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.panel h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; margin: 0; }
-.desc { color: var(--muted); margin: 0; max-width: 70ch; }
-.formula { font-family: var(--font-mono); font-size: .85rem; background: var(--accent-soft); color: var(--ink); padding: 8px 12px; border-radius: 6px; overflow-x: auto; white-space: nowrap; }
-.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
-label.f { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
-label.f.span2 { grid-column: span 2; }
-@media (max-width: 420px) { label.f.span2 { grid-column: auto; } }
-input, select { font: 400 1rem var(--font-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0; }
-input.in { background: var(--input-bg); }
-input[readonly] { background: var(--accent-soft); border-color: transparent; font-weight: 600; }
-.unit { text-transform: none; letter-spacing: 0; font-weight: 400; }
-.group-title { font: 600 .8rem var(--font-display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 120px; display: flex; flex-direction: column; gap: 18px; }
+@media (min-width: 900px) { .wrap { padding-block: 32px 48px; } }
+
+/* Encabezado */
+.top { display: flex; align-items: center; gap: 12px; }
+.mark { width: 44px; height: 44px; border-radius: 50%; background: var(--brand-2); display: grid; place-items: center; flex: none; }
+.eyebrow { font-size: .75rem; font-weight: 800; letter-spacing: .12em; color: var(--brand); text-transform: uppercase; }
+.q-hero { background: var(--brand); background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 70%, var(--brand-2))); }
+.mark svg { width: 24px; height: 24px; }
+.top h1 { font-weight: 800; font-size: 1.45rem; line-height: 1.15; margin: 0; text-wrap: balance; }
+.top p { margin: 2px 0 0; color: var(--muted); font-size: .92rem; }
+
+/* Pestañas de método: deslizables en móvil */
+.tabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; padding-block: 2px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: none; font: 700 .92rem var(--font-body); padding: 10px 16px; min-height: 44px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.tab[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+:focus-visible { outline: 3px solid var(--brand-2); outline-offset: 2px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (min-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr) 320px; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+@media (max-width: 480px) { .card { padding: 16px 14px; } }
+.stack { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card h2 { font-weight: 800; font-size: 1.15rem; margin: 0; }
+.step { display: flex; align-items: center; gap: 10px; }
+.step b { width: 26px; height: 26px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-size: .85rem; flex: none; }
+.desc { color: var(--muted); margin: 0; font-size: .95rem; max-width: 62ch; }
+.hint { font-size: .85rem; color: var(--muted); margin: 0; }
+.formula { font-family: var(--font-mono); font-size: .82rem; background: var(--bg); padding: 10px 12px; border-radius: 10px; overflow-x: auto; white-space: nowrap; }
+
+/* Campos */
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 640px) { .fields { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.fields .full { grid-column: 1 / -1; }
+label.f { display: flex; flex-direction: column; justify-content: space-between; gap: 5px; font-size: .85rem; color: var(--muted); font-weight: 700; min-width: 0; }
+.unit { font-weight: 400; }
+input, select { font: 400 16px var(--font-body); color: var(--ink); background: var(--input-bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px; width: 100%; min-width: 0; }
+input:focus, select:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-soft); }
+.derived { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .9rem; color: var(--muted); }
+.derived strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* Selector Río / Canal */
+.seg { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg); border-radius: 12px; padding: 4px; }
+.seg input { position: absolute; left: 0; top: 0; width: 1px; height: 1px; min-height: 0; padding: 0; opacity: 0; pointer-events: none; }
+.seg label { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1px; padding: 8px; min-height: 52px; border-radius: 9px; cursor: pointer; font-weight: 700; color: var(--muted); }
+.seg label small { font-weight: 400; font-size: .75rem; }
+.seg input:checked + label { background: var(--surface); color: var(--brand); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.seg input:focus-visible + label { outline: 3px solid var(--brand-2); }
+
+/* Botones */
+.btn { font: 700 .92rem var(--font-body); padding: 10px 14px; min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.btn.ghost { border-style: dashed; color: var(--brand); border-color: var(--brand); background: transparent; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.chips input { width: 96px; }
-.btn { font: 600 .85rem var(--font-body); padding: 7px 12px; border-radius: 6px; border: 1px dashed var(--accent); background: transparent; color: var(--accent); cursor: pointer; }
-.btn.solid { border-style: solid; background: var(--accent); color: var(--bg); }
-.tablewrap { overflow-x: auto; }
+.chips input { width: 92px; }
+
+/* Desplegables */
+details.fx { border-top: 1px solid var(--line); padding-top: 4px; }
+details.fx > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; user-select: none; white-space: nowrap; }
+details.fx > summary::-webkit-details-marker { display: none; }
+details.fx > summary::before { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; flex: none; margin-left: 2px; }
+details.fx[open] > summary::before { transform: rotate(45deg); }
+details.fx > summary .sum-extra { margin-left: auto; font-weight: 400; font-size: .85rem; color: var(--muted); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+details.fx > .stack { padding-block: 6px 10px; }
+
+/* Tabla de verticales */
+.tablewrap { overflow-x: auto; margin-inline: -4px; }
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-th { font: 600 .74rem/1.2 var(--font-display); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); text-align: right; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: bottom; }
-th.in-col { color: var(--accent); }
-td { padding: 3px 6px; border-bottom: 1px solid var(--line); }
-td input { padding: 5px 8px; min-width: 76px; text-align: right; font-size: .9rem; }
-td.num { font-family: var(--font-mono); font-size: .85rem; text-align: right; white-space: nowrap; }
-tr.edge td { background: var(--accent-soft); }
-tr.tot td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; padding-block: 8px; }
-tr.tot td.lbl { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .06em; }
-.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .82rem; color: var(--muted); }
+th { font-size: .78rem; font-weight: 700; color: var(--muted); text-align: right; padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: bottom; line-height: 1.2; }
+th:first-child, td:first-child { text-align: center; }
+td { padding: 4px; border-bottom: 1px solid var(--line); }
+td input { padding: 8px; min-height: 40px; text-align: right; min-width: 64px; }
+td.num { font-family: var(--font-mono); font-size: .82rem; text-align: right; white-space: nowrap; color: var(--muted); }
+td.q { color: var(--ink); font-weight: 600; }
+td.no { font-weight: 700; color: var(--muted); }
+tr.edge td.no { color: var(--brand); }
+tr.tot td { font-weight: 800; border-bottom: none; padding-block: 10px; color: var(--ink); }
+.dcol { display: none; }
+table.detail .dcol { display: table-cell; }
+.switch { display: inline-flex; align-items: center; gap: 8px; font-size: .9rem; color: var(--muted); cursor: pointer; min-height: 44px; }
+.switch input { width: 20px; height: 20px; min-height: 0; accent-color: var(--brand); }
+
+/* Gráfico */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .8rem; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
-.sw { width: 18px; height: 0; border-top: 2.5px solid var(--bed); display: inline-block; }
-.sw.surf { border-color: var(--accent); }
-.sw.vert { border-top: 1.5px dashed var(--muted); }
+.sw { width: 16px; border-top: 2.5px solid var(--bed); display: inline-block; }
+.sw.surf { border-color: var(--river); }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--point); display: inline-block; }
 svg { width: 100%; height: auto; display: block; }
 .sv-water { fill: var(--water); }
@@ -92,232 +143,257 @@ svg { width: 100%; height: auto; display: block; }
 .sv-vert { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
 .sv-pt { fill: var(--point); }
 .sv-grid { stroke: var(--line); stroke-width: 1; }
-.sv-txt { fill: var(--muted); font: 11px var(--font-mono); }
-.sv-vel { fill: var(--ink); font: 600 10.5px var(--font-mono); }
-.sv-surf { stroke: var(--accent); stroke-width: 2; }
+.sv-txt { fill: var(--muted); font: 12px var(--font-mono); }
+.sv-vel { fill: var(--ink); font: 600 11px var(--font-mono); }
+.sv-surf { stroke: var(--river); stroke-width: 2; }
+
 /* Resultado */
-.result { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
-.grid.wide .result { position: static; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 32px; }
-.grid.wide .result > .full { grid-column: 1 / -1; }
-@media (max-width: 720px) { .grid.wide .result { grid-template-columns: minmax(0, 1fr); } }
-.q-main { display: flex; flex-direction: column; gap: 2px; }
-.q-label { font: 600 .8rem var(--font-display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-.q-value { font: 700 2.8rem/1.05 var(--font-display); color: var(--accent); font-variant-numeric: tabular-nums; word-break: break-word; }
-.q-value small { font-size: 1.1rem; color: var(--ink); font-weight: 600; margin-left: 4px; }
-.conv { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-variant-numeric: tabular-nums; margin: 0; align-content: start; }
+.result { gap: 12px; }
+@media (min-width: 900px) { .result { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); } }
+.q-hero { color: var(--on-brand); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 2px; }
+.q-label { font-size: .85rem; font-weight: 700; opacity: .85; }
+.q-value { font-weight: 800; font-size: 2.6rem; line-height: 1.05; font-variant-numeric: tabular-nums; word-break: break-word; }
+.q-value small { font-size: 1.05rem; font-weight: 700; margin-left: 4px; }
+.q-sub { font-size: .9rem; opacity: .9; font-variant-numeric: tabular-nums; }
+.conv { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-variant-numeric: tabular-nums; margin: 0; }
 .conv dt { color: var(--muted); }
-.conv dd { margin: 0; font-family: var(--font-mono); text-align: right; }
-.steps { margin: 0; padding-left: 18px; font-size: .9rem; display: flex; flex-direction: column; gap: 4px; }
+.conv dd { margin: 0; font-family: var(--font-mono); font-size: .9rem; text-align: right; }
+.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 .steps li { font-family: var(--font-mono); font-size: .8rem; overflow-wrap: anywhere; }
-.warn { background: var(--warn-soft); color: var(--warn); border-radius: 6px; padding: 8px 12px; font-size: .88rem; }
+.warn { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: .88rem; }
 #warns { display: flex; flex-direction: column; gap: 8px; }
-.err { color: var(--warn); font-weight: 600; margin: 0; }
-hr { border: none; border-top: 1px solid var(--line); margin: 0; width: 100%; }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.foot { color: var(--muted); font-size: .85rem; max-width: 75ch; }
-.hint { font-size: .82rem; color: var(--muted); margin: 0; }
-details.fx > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding-block: 4px; user-select: none; }
-details.fx > summary::-webkit-details-marker { display: none; }
-details.fx > summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform .15s; flex: none; }
-details.fx[open] > summary::before { transform: rotate(45deg); }
-details.fx > summary::after { content: "Ver"; margin-left: auto; font: 600 .78rem var(--font-body); text-transform: none; letter-spacing: 0; color: var(--accent); }
-details.fx[open] > summary::after { content: "Ocultar"; }
-details.fx > summary:hover { color: var(--ink); }
-details.fx > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-details.fx > .stack { margin-top: 12px; }
-@media (prefers-reduced-motion: no-preference) { .tab, .btn { transition: background .15s, color .15s; } }
+#warns:empty { display: none; }
+.err { color: var(--warn); font-weight: 700; margin: 0; }
+.actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
+
+/* Barra de caudal fija (solo móvil) */
+.qbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0,0,0,.08); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 12px; }
+.qbar .ql { font-size: .8rem; color: var(--muted); font-weight: 700; }
+.qbar .qv { font-size: 1.5rem; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.qbar .btn { margin-left: auto; }
+@media (min-width: 900px) { .qbar { display: none; } }
+
+.foot { color: var(--muted); font-size: .8rem; text-align: center; margin: 0; }
+@media (prefers-reduced-motion: reduce) { details.fx > summary::before { transition: none; } }
 body{margin:0}[hidden]{display:none!important}
 </style>
 </head>
 <body>
 
 <div class="wrap">
-  <header>
-    <h1>Calculadora de Aforos</h1>
-    <p>Calcula el caudal con el método que usaste en campo. La cartera de molinete sigue el mismo formato y las mismas fórmulas de la cartera de campo Cenicaña–CVC.</p>
+  <header class="top">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3c3.5 4.2 6 7.6 6 10.5A6 6 0 0 1 6 13.5C6 10.6 8.5 7.2 12 3Z" fill="#fff" fill-opacity=".95"/><path d="M8.5 14.5c.6 1.6 2 2.5 3.5 2.5" stroke="#000" stroke-opacity=".25" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </div>
+    <div>
+      <div class="eyebrow">AURPA · Río La Paila</div>
+      <h1>Calculadora de Aforos</h1>
+      <p>Elige el método, llena los datos de campo y el caudal se calcula solo.</p>
+    </div>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Método de aforo">
-    <button class="tab" role="tab" id="t-sec" data-m="sec">Molinete · cartera de campo</button>
+    <button class="tab" role="tab" id="t-sec" data-m="sec">Molinete</button>
     <button class="tab" role="tab" id="t-vol" data-m="vol">Volumétrico</button>
     <button class="tab" role="tab" id="t-flot" data-m="flot">Flotador</button>
     <button class="tab" role="tab" id="t-vert" data-m="vert">Vertedero</button>
-    <button class="tab" role="tab" id="t-par" data-m="par">Canal Parshall</button>
+    <button class="tab" role="tab" id="t-par" data-m="par">Parshall</button>
   </nav>
 
-  <div class="grid" id="grid">
-    <section class="panel" id="inputs">
+  <div class="grid">
+    <div class="stack" id="inputs">
 
-      <!-- CARTERA DE MOLINETE -->
+      <!-- ================= MOLINETE ================= -->
       <div data-panel="sec" class="stack" hidden>
-        <h2>Cartera de campo para aforos con molinete</h2>
-        <p class="desc">Ingresa el espejo de agua y el número de intervalos. La tabla genera las verticales a distancias iguales; tú anotas en cada una la profundidad total y la velocidad leída en el molinete. Las celdas amarillas son las que se llenan en campo.</p>
-
-        <div class="fields">
-          <label class="f span2">Tipo de sección
-            <select id="c-tipo" class="in">
-              <option value="rio">Río o quebrada · orillas en cero</option>
-              <option value="canal">Canal · paredes con agua (se mide en L = 0)</option>
-            </select></label>
-          <label class="f span2">Sitio de medición
-            <input id="c-sitio" type="text" class="in" value="Medios Reyes B"></label>
-          <label class="f">Fecha
-            <input id="c-fecha" type="date" class="in" value="2026-09-08"></label>
-          <label class="f">Hora inicio
-            <input id="c-hi" type="time" class="in"></label>
-          <label class="f">Hora fin
-            <input id="c-hf" type="time" class="in"></label>
-          <label class="f">Espejo L <span class="unit">(cm)</span>
-            <input id="c-esp" type="number" step="any" class="in" value="520"></label>
-          <label class="f">N.º de intervalos
-            <input id="c-n" type="number" min="1" max="40" step="1" class="in" value="10"></label>
-          <label class="f">Ancho intervalos <span class="unit">(cm)</span>
-            <input id="c-b" type="text" readonly tabindex="-1"></label>
-          <label class="f">% altura (defecto) <span class="unit">desde el fondo</span>
-            <input id="c-pct" type="number" step="any" class="in" value="0.6"></label>
-          <label class="f">Lectura de mira inicial <span class="unit">(cm)</span>
-            <input id="c-mi" type="number" step="any" class="in"></label>
-          <label class="f">Lectura de mira final <span class="unit">(cm)</span>
-            <input id="c-mf" type="number" step="any" class="in"></label>
-        </div>
-
-        <div class="tablewrap">
-          <table>
-            <thead><tr>
-              <th>No.</th><th>Distancia L (cm)</th><th class="in-col">Prof. total d (cm)</th><th class="in-col">% altura (desde fondo)</th>
-              <th>Altura lectura (cm)</th><th class="in-col">Vel (m/s)</th><th>Ancho faja b (m)</th><th>Área faja (m²)</th><th>Caudal faja q (m³/s)</th>
-            </tr></thead>
-            <tbody id="c-rows"></tbody>
-          </table>
-        </div>
-        <p class="hint" id="c-hint"></p>
-
-        <hr>
-        <p class="group-title" id="c-chart-title">Sección transversal</p>
-        <div id="c-svg"></div>
-        <div class="legend">
-          <span><i class="sw"></i>Lecho del río</span>
-          <span><i class="sw surf"></i>Espejo de agua</span>
-          <span><i class="sw vert"></i>Vertical medida (límite de sección)</span>
-          <span><i class="dot"></i>Punto de velocidad medida</span>
-        </div>
-
-        <hr>
-        <details class="fx">
-          <summary class="group-title">Fórmulas · método de la sección media (ISO 748)</summary>
-          <div class="stack">
-            <p class="desc">Cada vertical representa su propio panel; su profundidad y su velocidad se aplican a todo el panel.</p>
-            <div class="formula" id="c-f-ancho"></div>
-            <div class="formula">Área del panel: A = d × b &nbsp;(d en m = cm/100)</div>
-            <div class="formula">Caudal del panel: q = v × A &nbsp;&nbsp;·&nbsp;&nbsp; Caudal total: Q = Σ q</div>
+        <section class="card">
+          <h2 class="step"><b>1</b>Sección</h2>
+          <div class="seg" role="radiogroup" aria-label="Tipo de sección">
+            <input type="radio" name="c-tipo" id="c-tipo-rio" value="rio" checked>
+            <label for="c-tipo-rio">Río<small>orillas en cero</small></label>
+            <input type="radio" name="c-tipo" id="c-tipo-canal" value="canal">
+            <label for="c-tipo-canal">Canal<small>se mide en las paredes</small></label>
           </div>
-        </details>
+          <div class="fields">
+            <label class="f">Espejo de agua <span class="unit">(cm)</span>
+              <input id="c-esp" type="number" inputmode="decimal" step="any" value="520"></label>
+            <label class="f">N.º de intervalos
+              <input id="c-n" type="number" inputmode="numeric" min="1" max="40" step="1" value="10"></label>
+          </div>
+          <div class="derived" id="c-derived"></div>
+
+          <details class="fx" id="c-more">
+            <summary>Datos del aforo <span class="sum-extra" id="c-more-sum"></span></summary>
+            <div class="stack">
+              <div class="fields">
+                <label class="f full">Sitio de medición
+                  <input id="c-sitio" type="text" value="Medios Reyes B"></label>
+                <label class="f">Fecha
+                  <input id="c-fecha" type="date" value="2026-09-08"></label>
+                <label class="f">% altura <span class="unit">(desde el fondo)</span>
+                  <input id="c-pct" type="number" inputmode="decimal" step="any" value="0.6"></label>
+                <label class="f">Hora inicio
+                  <input id="c-hi" type="time"></label>
+                <label class="f">Hora fin
+                  <input id="c-hf" type="time"></label>
+                <label class="f">Mira inicial <span class="unit">(cm)</span>
+                  <input id="c-mi" type="number" inputmode="decimal" step="any"></label>
+                <label class="f">Mira final <span class="unit">(cm)</span>
+                  <input id="c-mf" type="number" inputmode="decimal" step="any"></label>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section class="card">
+          <h2 class="step"><b>2</b>Verticales</h2>
+          <p class="desc">Anota en cada vertical la profundidad y la velocidad del molinete.</p>
+          <div class="tablewrap">
+            <table id="c-table">
+              <thead><tr>
+                <th>#</th><th>Distancia<br>(cm)</th><th>Prof.<br>(cm)</th><th>Vel.<br>(m/s)</th>
+                <th class="dcol">% altura</th><th class="dcol">Altura lect. (cm)</th><th class="dcol">Faja b (m)</th><th class="dcol">Área (m²)</th>
+                <th>q<br>(L/s)</th>
+              </tr></thead>
+              <tbody id="c-rows"></tbody>
+            </table>
+          </div>
+          <label class="switch"><input type="checkbox" id="c-detail"> Mostrar columnas de cálculo</label>
+          <p class="hint" id="c-hint"></p>
+        </section>
+
+        <section class="card">
+          <h2 class="step"><b>3</b>Sección transversal</h2>
+          <div id="c-svg"></div>
+          <div class="legend">
+            <span><i class="sw"></i>Lecho</span>
+            <span><i class="sw surf"></i>Espejo de agua</span>
+            <span><i class="dot"></i>Punto de velocidad</span>
+          </div>
+          <details class="fx">
+            <summary>Fórmulas que usa (ISO 748)</summary>
+            <div class="stack">
+              <p class="desc">Método de la sección media: cada vertical representa su propio panel; su profundidad y su velocidad se aplican a todo el panel.</p>
+              <div class="formula" id="c-f-ancho"></div>
+              <div class="formula">Área del panel: A = d × b &nbsp;(d en m = cm/100)</div>
+              <div class="formula">Caudal: q = v × A &nbsp;·&nbsp; Q = Σ q</div>
+            </div>
+          </details>
+        </section>
       </div>
 
-      <!-- VOLUMÉTRICO -->
-      <div data-panel="vol" class="stack" hidden>
+      <!-- ================= VOLUMÉTRICO ================= -->
+      <section data-panel="vol" class="card" hidden>
         <h2>Método volumétrico</h2>
-        <p class="desc">Llenas un recipiente de volumen conocido y cronometras cuánto tarda. Ideal para caudales pequeños: tuberías, salidas de canaleta, manantiales.</p>
-        <div class="formula">Q = V / t̄</div>
+        <p class="desc">Llena un recipiente de volumen conocido y toma el tiempo. Para caudales pequeños.</p>
         <div class="fields">
-          <label class="f">Volumen del recipiente
-            <input id="vol-v" type="number" step="any" value="20"></label>
+          <label class="f">Volumen
+            <input id="vol-v" type="number" inputmode="decimal" step="any" value="20"></label>
           <label class="f">Unidad
             <select id="vol-u"><option value="0.001">litros</option><option value="1">m³</option><option value="0.003785411784">galones (US)</option></select></label>
         </div>
-        <p class="group-title">Tiempos de llenado (s)</p>
+        <p class="f" style="margin:0;font-weight:700;color:var(--muted);font-size:.85rem">Tiempos de llenado (s)</p>
         <div class="chips" id="vol-t"></div>
-      </div>
+        <details class="fx"><summary>Fórmula</summary><div class="stack"><div class="formula">Q = V / t̄ (promedio de los tiempos)</div></div></details>
+      </section>
 
-      <!-- FLOTADOR -->
-      <div data-panel="flot" class="stack" hidden>
+      <!-- ================= FLOTADOR ================= -->
+      <section data-panel="flot" class="card" hidden>
         <h2>Método del flotador</h2>
-        <p class="desc">Mides el tiempo que tarda un objeto flotante en recorrer un tramo recto. La velocidad superficial se corrige con un coeficiente para obtener la velocidad media.</p>
-        <div class="formula">Q = k · A · (L / t̄) &nbsp;&nbsp; A = B · h̄</div>
+        <p class="desc">Toma el tiempo que tarda un flotador en recorrer un tramo recto.</p>
         <div class="fields">
-          <label class="f">Longitud del tramo L <span class="unit">(m)</span>
-            <input id="fl-L" type="number" step="any" value="10"></label>
-          <label class="f">Ancho del espejo B <span class="unit">(m)</span>
-            <input id="fl-B" type="number" step="any" value="2.4"></label>
-          <label class="f">Coeficiente k
+          <label class="f">Largo del tramo <span class="unit">(m)</span>
+            <input id="fl-L" type="number" inputmode="decimal" step="any" value="10"></label>
+          <label class="f">Ancho <span class="unit">(m)</span>
+            <input id="fl-B" type="number" inputmode="decimal" step="any" value="2.4"></label>
+          <label class="f full">Tipo de cauce (coeficiente k)
             <select id="fl-k">
-              <option value="0.85">0.85 · canal revestido liso</option>
-              <option value="0.80" selected>0.80 · canal de tierra regular</option>
-              <option value="0.75">0.75 · río con fondo de grava</option>
-              <option value="0.65">0.65 · cauce rugoso / poco profundo</option>
+              <option value="0.85">Canal revestido liso · 0,85</option>
+              <option value="0.80" selected>Canal de tierra · 0,80</option>
+              <option value="0.75">Río con fondo de grava · 0,75</option>
+              <option value="0.65">Cauce rugoso o poco profundo · 0,65</option>
             </select></label>
         </div>
-        <p class="group-title">Tiempos de recorrido (s)</p>
+        <p class="f" style="margin:0;font-weight:700;color:var(--muted);font-size:.85rem">Tiempos de recorrido (s)</p>
         <div class="chips" id="fl-t"></div>
-        <p class="group-title">Profundidades medidas en la sección (m)</p>
+        <p class="f" style="margin:0;font-weight:700;color:var(--muted);font-size:.85rem">Profundidades (m)</p>
         <div class="chips" id="fl-h"></div>
-      </div>
+        <details class="fx"><summary>Fórmula</summary><div class="stack"><div class="formula">Q = k · A · (L / t̄) &nbsp; A = ancho · profundidad media</div></div></details>
+      </section>
 
-      <!-- VERTEDERO -->
-      <div data-panel="vert" class="stack" hidden>
-        <h2>Vertedero de pared delgada</h2>
-        <p class="desc">Mides la carga h sobre la cresta, aguas arriba a una distancia de unas 4h, con descarga libre (lámina ventilada).</p>
-        <div class="formula" id="vt-formula"></div>
+      <!-- ================= VERTEDERO ================= -->
+      <section data-panel="vert" class="card" hidden>
+        <h2>Vertedero</h2>
+        <p class="desc">Mide la carga h sobre la cresta, aguas arriba, con descarga libre.</p>
         <div class="fields">
-          <label class="f">Tipo de vertedero
+          <label class="f full">Tipo
             <select id="vt-type">
-              <option value="tri">Triangular (escotadura en V)</option>
-              <option value="rect">Rectangular · Francis</option>
-              <option value="cip">Trapezoidal · Cipolletti</option>
+              <option value="tri">Triangular (en V)</option>
+              <option value="rect">Rectangular (Francis)</option>
+              <option value="cip">Trapezoidal (Cipolletti)</option>
             </select></label>
           <label class="f">Carga h <span class="unit">(cm)</span>
-            <input id="vt-h" type="number" step="any" value="12"></label>
-          <label class="f" id="vt-ang-w">Ángulo θ <span class="unit">(°)</span>
-            <input id="vt-ang" type="number" step="any" value="90"></label>
+            <input id="vt-h" type="number" inputmode="decimal" step="any" value="12"></label>
+          <label class="f" id="vt-ang-w">Ángulo <span class="unit">(°)</span>
+            <input id="vt-ang" type="number" inputmode="decimal" step="any" value="90"></label>
           <label class="f" id="vt-cd-w">Coeficiente Cd
-            <input id="vt-cd" type="number" step="any" value="0.58"></label>
-          <label class="f" id="vt-L-w">Ancho de cresta L <span class="unit">(m)</span>
-            <input id="vt-L" type="number" step="any" value="0.5"></label>
-          <label class="f" id="vt-n-w">Contracciones laterales
-            <select id="vt-n"><option value="0">0 · sin contracción</option><option value="1">1</option><option value="2" selected>2 · con contracción</option></select></label>
+            <input id="vt-cd" type="number" inputmode="decimal" step="any" value="0.58"></label>
+          <label class="f" id="vt-L-w">Ancho de cresta <span class="unit">(m)</span>
+            <input id="vt-L" type="number" inputmode="decimal" step="any" value="0.5"></label>
+          <label class="f" id="vt-n-w">Contracciones
+            <select id="vt-n"><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option></select></label>
         </div>
-      </div>
+        <details class="fx"><summary>Fórmula</summary><div class="stack"><div class="formula" id="vt-formula"></div></div></details>
+      </section>
 
-      <!-- PARSHALL -->
-      <div data-panel="par" class="stack" hidden>
+      <!-- ================= PARSHALL ================= -->
+      <section data-panel="par" class="card" hidden>
         <h2>Canal Parshall</h2>
-        <p class="desc">Lees la carga Ha en el pozo o regla de la sección convergente. Si también mides Hb en la garganta, se verifica si el flujo está sumergido.</p>
-        <div class="formula" id="par-formula">Q = K · Ha<sup>n</sup></div>
+        <p class="desc">Lee la carga Ha en la regla. Si mides Hb, se revisa si el flujo está sumergido.</p>
         <div class="fields">
-          <label class="f">Ancho de garganta W
+          <label class="f full">Ancho de garganta
             <select id="par-w"></select></label>
-          <label class="f">Carga Ha <span class="unit">(cm)</span>
-            <input id="par-ha" type="number" step="any" value="25"></label>
-          <label class="f">Carga Hb, opcional <span class="unit">(cm)</span>
-            <input id="par-hb" type="number" step="any" placeholder="—"></label>
+          <label class="f">Ha <span class="unit">(cm)</span>
+            <input id="par-ha" type="number" inputmode="decimal" step="any" value="25"></label>
+          <label class="f">Hb, opcional <span class="unit">(cm)</span>
+            <input id="par-hb" type="number" inputmode="decimal" step="any" placeholder="—"></label>
         </div>
-      </div>
-    </section>
+        <details class="fx"><summary>Fórmula</summary><div class="stack"><div class="formula" id="par-formula"></div></div></details>
+      </section>
+    </div>
 
-    <aside class="panel result" aria-live="polite">
-      <div class="q-main">
-        <span class="q-label">Caudal Q</span>
+    <aside class="card result" id="result" aria-live="polite">
+      <div class="q-hero">
+        <span class="q-label">Caudal</span>
         <div class="q-value" id="q-main">—</div>
+        <span class="q-sub" id="q-sub"></span>
       </div>
-      <dl class="conv" id="conv"></dl>
-      <div id="warns" class="full"></div>
-      <hr class="full">
-      <details class="fx full">
-        <summary class="group-title">Cálculo paso a paso</summary>
-        <div class="stack">
-          <ol class="steps" id="steps"></ol>
-        </div>
+      <div id="warns"></div>
+      <details class="fx">
+        <summary>Otras unidades</summary>
+        <div class="stack"><dl class="conv" id="conv"></dl></div>
       </details>
-      <div class="actions full">
-        <button class="btn solid" id="copy" type="button">Copiar resultado</button>
+      <details class="fx">
+        <summary>Cálculo paso a paso</summary>
+        <div class="stack"><ol class="steps" id="steps"></ol></div>
+      </details>
+      <div class="actions">
+        <button class="btn primary" id="copy" type="button">Copiar resultado</button>
         <button class="btn" id="copy-xls" type="button">Copiar tabla para Excel</button>
-        <button class="btn" id="clear" type="button">Nuevo aforo (limpiar)</button>
+        <button class="btn ghost" id="clear" type="button">Nuevo aforo</button>
       </div>
-      <p class="hint full" id="copy-msg"></p>
+      <p class="hint" id="copy-msg"></p>
     </aside>
   </div>
 
-  <p class="foot">Otros métodos: flotador con coeficiente según tipo de cauce; vertedero triangular con Cd ≈ 0,58 (90° → Q ≈ 1,38·h<sup>2,5</sup>); Francis Q = 1,84·(L − 0,1·n·h)·h<sup>1,5</sup>; Cipolletti Q = 1,859·L·h<sup>1,5</sup>; Parshall con constantes K y n en unidades métricas (m, m³/s). La cartera de molinete se guarda en este navegador mientras la llenas.</p>
+  <p class="foot">Los datos se guardan solo en este dispositivo.</p>
+</div>
+
+<div class="qbar" id="qbar">
+  <div>
+    <div class="ql">Caudal</div>
+    <div class="qv" id="qbar-v">—</div>
+  </div>
+  <button class="btn" id="qbar-go" type="button">Ver resultado</button>
 </div>
 
 <script>
@@ -328,13 +404,13 @@ body{margin:0}[hidden]{display:none!important}
   const fix = (n, d) => isFinite(n) ? n.toLocaleString("es", { maximumFractionDigits: d, minimumFractionDigits: d }) : "";
   const avg = (a) => a.reduce((s, x) => s + x, 0) / a.length;
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
 
   // =========================================================
   // CARTERA DE MOLINETE (réplica de la hoja de Excel)
   // =========================================================
   const STORE = "aforo-cartera-v2";
-  // Datos por tipo de sección. Río: ejemplo del aforo 08-09-2026 Final Medios Reyes B.
-  // Canal: ejemplo ilustrativo de un canal rectangular de 1,20 m.
+  // Río: ejemplo del aforo 08-09-2026 Final Medios Reyes B. Canal: ejemplo ilustrativo de 1,20 m.
   const SECS = {
     rio: { esp: "520", n: "10", d: [16, 34, 49, 44, 47, 48, 39, 45, 57, 54], v: [0.0002, 0.014, 0.0352, 0.0188, 0.1034, 0.11, 0.1105, 0.1385, 0.1409, 0.055], p: [] },
     canal: { esp: "120", n: "6", d: [45, 46, 46, 47, 46, 46, 45], v: [0.18, 0.32, 0.40, 0.42, 0.39, 0.31, 0.17], p: [] },
@@ -348,8 +424,9 @@ body{margin:0}[hidden]{display:none!important}
       const s = JSON.parse(localStorage.getItem(STORE) || "null");
       if (s) {
         HEAD_IDS.forEach((id) => { if (s.h && s.h[id] !== undefined) $(id).value = s.h[id]; });
-        ["rio", "canal"].forEach((t) => { if (s.secs && s.secs[t]) SECS[t] = s.secs[t]; });
+        ["rio", "canal"].forEach((t) => { if (s.secs && s.secs[t]) SECS[t] = Object.assign({ d: [], v: [], p: [] }, s.secs[t]); });
         if (s.tipo === "canal" || s.tipo === "rio") tipo = s.tipo;
+        if (s.detail) $("c-detail").checked = true;
       } else {
         const old = JSON.parse(localStorage.getItem("aforo-cartera-v1") || "null");
         if (old && old.h) {
@@ -359,22 +436,24 @@ body{margin:0}[hidden]{display:none!important}
       }
     } catch (e) {}
     cart = SECS[tipo];
-    $("c-tipo").value = tipo;
+    $("c-tipo-" + tipo).checked = true;
     $("c-esp").value = cart.esp; $("c-n").value = cart.n;
+    $("c-table").classList.toggle("detail", $("c-detail").checked);
   }
   function saveCart() {
     cart.esp = $("c-esp").value; cart.n = $("c-n").value;
     try {
       const h = {}; HEAD_IDS.forEach((id) => (h[id] = $(id).value));
-      localStorage.setItem(STORE, JSON.stringify({ h, tipo, secs: SECS }));
+      localStorage.setItem(STORE, JSON.stringify({ h, tipo, secs: SECS, detail: $("c-detail").checked }));
     } catch (e) {}
   }
-  $("c-tipo").addEventListener("change", () => {
+  document.querySelectorAll('input[name="c-tipo"]').forEach((r) => r.addEventListener("change", () => {
     cart.esp = $("c-esp").value; cart.n = $("c-n").value;
-    tipo = $("c-tipo").value; cart = SECS[tipo];
+    tipo = r.value; cart = SECS[tipo];
     $("c-esp").value = cart.esp; $("c-n").value = cart.n;
     renderCartRows();
-  });
+  }));
+  $("c-detail").addEventListener("change", () => $("c-table").classList.toggle("detail", $("c-detail").checked));
 
   function nIntervals() { const n = Math.round(num($("c-n").value)); return n >= 1 ? Math.min(n, 40) : 0; }
   // Río: N verticales en L = b … N·b (la orilla L = 0 se asume seca).
@@ -382,25 +461,25 @@ body{margin:0}[hidden]{display:none!important}
   function nVerticals() { const n = nIntervals(); return n ? (tipo === "canal" ? n + 1 : n) : 0; }
 
   function renderCartRows() {
-    const nv = nVerticals(), tb = $("c-rows");
+    const nv = nVerticals();
     let html = "";
     for (let k = 0; k < nv; k++) {
       const d = cart.d[k] ?? "", v = cart.v[k] ?? "", p = cart.p[k] ?? "";
       const edge = tipo === "canal" ? (k === 0 || k === nv - 1) : k === nv - 1;
       html += `<tr class="${edge ? "edge" : ""}">
-        <td class="num">${k + 1}</td>
+        <td class="no">${k + 1}</td>
         <td class="num" id="c-L-${k}"></td>
-        <td><input class="in" type="number" step="any" id="c-d-${k}" data-k="${k}" data-f="d" value="${esc(d)}" aria-label="Profundidad vertical ${k + 1}"></td>
-        <td><input class="in" type="number" step="any" id="c-p-${k}" data-k="${k}" data-f="p" value="${esc(p)}" placeholder="" aria-label="Porcentaje de altura vertical ${k + 1}"></td>
-        <td class="num" id="c-h-${k}"></td>
-        <td><input class="in" type="number" step="any" id="c-v-${k}" data-k="${k}" data-f="v" value="${esc(v)}" aria-label="Velocidad vertical ${k + 1}"></td>
-        <td class="num" id="c-bb-${k}"></td>
-        <td class="num" id="c-a-${k}"></td>
-        <td class="num" id="c-q-${k}"></td>
+        <td><input type="number" inputmode="decimal" step="any" id="c-d-${k}" data-k="${k}" data-f="d" value="${esc(d)}" aria-label="Profundidad vertical ${k + 1}"></td>
+        <td><input type="number" inputmode="decimal" step="any" id="c-v-${k}" data-k="${k}" data-f="v" value="${esc(v)}" aria-label="Velocidad vertical ${k + 1}"></td>
+        <td class="dcol"><input type="number" inputmode="decimal" step="any" id="c-p-${k}" data-k="${k}" data-f="p" value="${esc(p)}" aria-label="Porcentaje de altura vertical ${k + 1}"></td>
+        <td class="num dcol" id="c-h-${k}"></td>
+        <td class="num dcol" id="c-bb-${k}"></td>
+        <td class="num dcol" id="c-a-${k}"></td>
+        <td class="num q" id="c-q-${k}"></td>
       </tr>`;
     }
-    html += `<tr class="tot"><td class="lbl" colspan="5">Total</td><td class="num" id="c-vm" title="Velocidad media = Q / A"></td><td class="num" id="c-sb"></td><td class="num" id="c-sa"></td><td class="num" id="c-sq"></td></tr>`;
-    tb.innerHTML = html;
+    html += `<tr class="tot"><td colspan="4" style="text-align:left">Total</td><td class="dcol"></td><td class="num dcol"></td><td class="num dcol" id="c-sb"></td><td class="num dcol" id="c-sa"></td><td class="num q" id="c-sq"></td></tr>`;
+    $("c-rows").innerHTML = html;
   }
   $("c-rows").addEventListener("input", (e) => {
     const t = e.target; if (!t.dataset.f) return;
@@ -411,15 +490,19 @@ body{margin:0}[hidden]{display:none!important}
   function cartCalc() {
     const L = num($("c-esp").value), n = nIntervals(), pctDef = num($("c-pct").value);
     const b = L > 0 && n > 0 ? L / n : NaN;
-    $("c-b").value = isFinite(b) ? fmt(b, 2) : "";
-    document.querySelectorAll('[id^="c-p-"]').forEach((i) => (i.placeholder = isFinite(pctDef) ? String(pctDef) : ""));
     const canal = tipo === "canal", nv = nVerticals();
+    document.querySelectorAll('[id^="c-p-"]').forEach((i) => (i.placeholder = isFinite(pctDef) ? String(pctDef) : ""));
+    $("c-derived").innerHTML = isFinite(b)
+      ? `<span>Ancho de intervalo <strong>${fmt(b, 2)} cm</strong></span><span><strong>${nv}</strong> verticales</span>`
+      : "";
+    const sitio = $("c-sitio").value.trim(), fecha = $("c-fecha").value;
+    $("c-more-sum").textContent = [sitio, fecha].filter(Boolean).join(" · ");
     $("c-hint").textContent = canal
-      ? "Canal: la primera vertical está en la pared inicial (L = 0) y la última en la pared final (L = espejo). En las paredes la faja mide b/2, porque cada vertical representa medio intervalo a cada lado. Si dejas vacío el % de altura de una vertical, se usa el valor por defecto."
-      : "Río: la orilla en L = 0 se asume seca y no se mide. La fila resaltada es la última vertical, en L = espejo (orilla final). Si dejas vacío el % de altura de una vertical, se usa el valor por defecto.";
+      ? "Canal: la primera vertical va en una pared (L = 0) y la última en la otra. Las verticales de pared cubren media faja."
+      : "Río: la orilla en L = 0 se toma como seca. La última vertical queda en L = espejo.";
     $("c-f-ancho").innerHTML = canal
-      ? "Ancho de faja: b = Espejo / N &nbsp;·&nbsp; en las paredes (L = 0 y L = Espejo) la faja es b/2"
-      : "Ancho de faja: b = L<sub>k</sub> − L<sub>k−1</sub> &nbsp;(primera faja desde L = 0)";
+      ? "Ancho de faja: b = Espejo / N · en las paredes la faja es b/2"
+      : "Ancho de faja: b = L<sub>k</sub> − L<sub>k−1</sub> (primera faja desde L = 0)";
     const rows = [];
     let sb = 0, sa = 0, sq = 0;
     for (let k = 0; k < nv; k++) {
@@ -429,16 +512,12 @@ body{margin:0}[hidden]{display:none!important}
       const pRaw = num(cart.p[k]), p = isFinite(pRaw) ? pRaw : pctDef;
       const h = p * d, bb = wCm / 100, A = (d / 100) * bb, q = v * A;
       rows.push({ Lk, d, p, h, v, bb, A, q });
-      const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
-      set(`c-L-${k}`, fmt(Lk, 2)); set(`c-h-${k}`, isFinite(h) ? fmt(h, 2) : "");
-      set(`c-bb-${k}`, fix(bb, 3)); set(`c-a-${k}`, isFinite(A) ? fix(A, 4) : ""); set(`c-q-${k}`, isFinite(q) ? fix(q, 5) : "");
+      set(`c-L-${k}`, fmt(Lk, 1)); set(`c-h-${k}`, isFinite(h) ? fmt(h, 2) : "");
+      set(`c-bb-${k}`, fix(bb, 3)); set(`c-a-${k}`, isFinite(A) ? fix(A, 4) : ""); set(`c-q-${k}`, isFinite(q) ? fix(q * 1000, 2) : "");
       if (isFinite(bb)) sb += bb; if (isFinite(A)) sa += A; if (isFinite(q)) sq += q;
     }
     const vm = sa > 0 ? sq / sa : NaN;
-    const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
-    set("c-vm", isFinite(vm) ? fix(vm, 4) : ""); set("c-sb", fix(sb, 3)); set("c-sa", fix(sa, 4)); set("c-sq", fix(sq, 5));
-    const sitio = $("c-sitio").value.trim();
-    $("c-chart-title").textContent = "Sección transversal" + (sitio ? " · " + sitio : "") + " · velocidad medida sobre cada vertical";
+    set("c-sb", fix(sb, 3)); set("c-sa", fix(sa, 4)); set("c-sq", fix(sq * 1000, 2));
     drawCart(L, rows);
     saveCart();
     return { L, n, b, pctDef, rows, sb, sa, sq, vm };
@@ -447,11 +526,12 @@ body{margin:0}[hidden]{display:none!important}
   function drawCart(L, rows) {
     const box = $("c-svg");
     if (!(L > 0) || !rows.length) { box.innerHTML = ""; return; }
-    const W = 760, H = 280, pl = 46, pr = 16, pt = 30, pb = 34;
+    const narrow = box.clientWidth && box.clientWidth < 520;
+    const W = narrow ? 420 : 760, H = narrow ? 250 : 280, pl = 40, pr = 12, pt = 28, pb = 34;
     const dmax = Math.max(10, ...rows.map((r) => (isFinite(r.d) ? r.d : 0)));
     const ystep = dmax <= 30 ? 5 : dmax <= 80 ? 10 : dmax <= 200 ? 25 : 50;
     const ymax = Math.ceil(dmax / ystep) * ystep;
-    const xstepRaw = L / 8, mag = Math.pow(10, Math.floor(Math.log10(xstepRaw)));
+    const xstepRaw = L / (narrow ? 5 : 8), mag = Math.pow(10, Math.floor(Math.log10(xstepRaw)));
     const xstep = [1, 2, 5, 10].map((m) => m * mag).find((s) => s >= xstepRaw) || 10 * mag;
     const sx = (x) => pl + (x / L) * (W - pl - pr);
     const sy = (d) => pt + (d / ymax) * (H - pt - pb);
@@ -459,7 +539,6 @@ body{margin:0}[hidden]{display:none!important}
     for (let y = 0; y <= ymax; y += ystep) s += `<line class="sv-grid" x1="${pl}" x2="${W - pr}" y1="${sy(y)}" y2="${sy(y)}"/><text class="sv-txt" x="${pl - 6}" y="${sy(y) + 4}" text-anchor="end">${y ? "−" + y : 0}</text>`;
     for (let x = 0; x <= L + 1e-9; x += xstep) s += `<text class="sv-txt" x="${sx(x)}" y="${H - 14}" text-anchor="middle">${fmt(x, 1)}</text>`;
     s += `<text class="sv-txt" x="${(pl + W - pr) / 2}" y="${H - 1}" text-anchor="middle">Distancia (cm)</text>`;
-    s += `<text class="sv-txt" transform="translate(11 ${(pt + H - pb) / 2}) rotate(-90)" text-anchor="middle">Profundidad (cm)</text>`;
     const pts = [[0, 0]].concat(rows.map((r) => [r.Lk, isFinite(r.d) ? r.d : 0])).concat([[L, 0]]);
     const poly = pts.map(([x, d]) => `${sx(x).toFixed(1)},${sy(d).toFixed(1)}`).join(" ");
     s += `<polygon class="sv-water" points="${poly}"/>`;
@@ -467,13 +546,14 @@ body{margin:0}[hidden]{display:none!important}
     s += `<line class="sv-surf" x1="${sx(0)}" x2="${sx(L)}" y1="${sy(0)}" y2="${sy(0)}"/>`;
     s += `<polyline class="sv-bed" points="${poly}"/>`;
     pts.forEach(([x, d]) => (s += `<circle class="sv-bedpt" cx="${sx(x)}" cy="${sy(d)}" r="2.6"/>`));
+    const showVel = !narrow || rows.length <= 8;
     rows.forEach((r) => {
       if (isFinite(r.d) && isFinite(r.h) && r.d > 0) {
         s += `<circle class="sv-pt" cx="${sx(r.Lk)}" cy="${sy(r.d - r.h)}" r="4.5"/>`;
-        if (isFinite(r.v)) s += `<text class="sv-vel" x="${sx(r.Lk)}" y="${pt - 10}" text-anchor="middle">${fmt(r.v, 3)}</text>`;
+        if (showVel && isFinite(r.v)) s += `<text class="sv-vel" x="${sx(r.Lk)}" y="${pt - 10}" text-anchor="middle">${fmt(r.v, 2)}</text>`;
       }
     });
-    s += `<text class="sv-txt" x="${pl}" y="12">Vel (m/s) →</text></svg>`;
+    s += `</svg>`;
     box.innerHTML = s;
   }
 
@@ -486,17 +566,17 @@ body{margin:0}[hidden]{display:none!important}
       box.innerHTML = "";
       vals.forEach((v, i) => {
         const inp = document.createElement("input");
-        inp.type = "number"; inp.step = "any"; inp.value = v; inp.id = containerId + "-" + i;
+        inp.type = "number"; inp.step = "any"; inp.inputMode = "decimal"; inp.value = v; inp.id = containerId + "-" + i;
         inp.setAttribute("aria-label", "Valor " + (i + 1));
         box.appendChild(inp);
       });
       const add = document.createElement("button");
-      add.type = "button"; add.className = "btn"; add.textContent = "+ Agregar";
+      add.type = "button"; add.className = "btn ghost"; add.textContent = "+ Agregar";
       add.onclick = () => { render(read().concat([""])); const all = box.querySelectorAll("input"); all[all.length - 1].focus(); compute(); };
       box.appendChild(add);
       if (vals.length > 1) {
         const rm = document.createElement("button");
-        rm.type = "button"; rm.className = "btn"; rm.textContent = "− Quitar último";
+        rm.type = "button"; rm.className = "btn"; rm.textContent = "Quitar";
         rm.onclick = () => { const r = read(); r.pop(); render(r); compute(); };
         box.appendChild(rm);
       }
@@ -527,26 +607,24 @@ body{margin:0}[hidden]{display:none!important}
   const methods = {
     sec() {
       const c = cartCalc(); lastCart = c;
-      if (!(c.L > 0) || !c.n) return { err: "Ingresa el espejo L y el número de intervalos." };
+      if (!(c.L > 0) || !c.n) return { err: "Ingresa el espejo de agua y el número de intervalos." };
       const filled = c.rows.filter((r) => isFinite(r.d) && isFinite(r.v));
       if (!filled.length) return { err: "Anota la profundidad y la velocidad de al menos una vertical." };
       const w = [];
       const missing = c.rows.length - filled.length;
-      if (missing) w.push(`${missing} vertical(es) sin profundidad o velocidad. No suman al caudal.`);
+      if (missing) w.push(`Faltan datos en ${missing} vertical(es).`);
       const mi = num($("c-mi").value), mf = num($("c-mf").value);
-      if (isFinite(mi) && isFinite(mf) && Math.abs(mf - mi) > 1) w.push(`La mira cambió ${fmt(mf - mi, 1)} cm durante el aforo. El nivel no fue estable.`);
+      if (isFinite(mi) && isFinite(mf) && Math.abs(mf - mi) > 1) w.push(`La mira cambió ${fmt(mf - mi, 1)} cm durante el aforo.`);
       if (c.rows.some((r) => isFinite(r.v) && r.v < 0)) w.push("Hay velocidades negativas. Revisa las lecturas.");
       const steps = [
-        tipo === "canal"
-          ? `Canal: ${c.rows.length} verticales (paredes incluidas)`
-          : `Río: ${c.rows.length} verticales (orilla L = 0 seca)`,
+        tipo === "canal" ? `Canal: ${c.rows.length} verticales (paredes incluidas)` : `Río: ${c.rows.length} verticales (orilla L = 0 seca)`,
         `b = Espejo / N = ${fmt(c.L, 2)} / ${c.n} = ${fmt(c.b, 2)} cm = ${fmt(c.b / 100, 4)} m` + (tipo === "canal" ? ` · paredes: b/2 = ${fmt(c.b / 200, 4)} m` : ""),
         `Área total A = Σ (d × b) = ${fmt(c.sa, 4)} m²`,
         `Q = Σ (v × A) = ${fmt(c.sq, 5)} m³/s`,
         `Velocidad media = Q / A = ${fmt(c.vm, 4)} m/s`,
       ];
       if (isFinite(mi) && isFinite(mf)) steps.push(`Mira: inicial ${fmt(mi, 1)} cm · final ${fmt(mf, 1)} cm`);
-      return { Q: c.sq, w, steps };
+      return { Q: c.sq, w, steps, sub: `Área ${fmt(c.sa, 3)} m² · vel. media ${fmt(c.vm, 3)} m/s` };
     },
     vol() {
       const V = num($("vol-v").value) * num($("vol-u").value);
@@ -555,27 +633,27 @@ body{margin:0}[hidden]{display:none!important}
       const tm = avg(t), Q = V / tm, w = [];
       const spread = (Math.max(...t) - Math.min(...t)) / tm;
       if (t.length < 3) w.push("Se recomiendan al menos 3 repeticiones del llenado.");
-      if (spread > 0.1) w.push(`Los tiempos varían ${fmt(spread * 100, 0)} % respecto al promedio. Revisa las lecturas.`);
-      if (tm < 3) w.push("Tiempos menores a 3 s tienen mucho error de cronometraje. Usa un recipiente más grande.");
+      if (spread > 0.1) w.push(`Los tiempos varían ${fmt(spread * 100, 0)} % respecto al promedio.`);
+      if (tm < 3) w.push("Con menos de 3 s el error de cronometraje es alto. Usa un recipiente más grande.");
       return { Q, w, steps: [
         `V = ${fmt(V * 1000, 3)} L = ${fmt(V, 5)} m³`,
         `t̄ = (${t.map((x) => fmt(x, 2)).join(" + ")}) / ${t.length} = ${fmt(tm, 3)} s`,
         `Q = ${fmt(V, 5)} / ${fmt(tm, 3)} = ${fmt(Q, 6)} m³/s`,
-      ] };
+      ], sub: `Tiempo promedio ${fmt(tm, 2)} s` };
     },
     flot() {
       const L = num($("fl-L").value), B = num($("fl-B").value), k = num($("fl-k").value);
       const t = flT.values().filter((x) => x > 0), h = flH.values().filter((x) => x >= 0);
-      if (!(L > 0) || !(B > 0) || !t.length || !h.length) return { err: "Completa longitud, ancho, al menos un tiempo y una profundidad." };
+      if (!(L > 0) || !(B > 0) || !t.length || !h.length) return { err: "Completa largo, ancho, al menos un tiempo y una profundidad." };
       const tm = avg(t), hm = avg(h), vs = L / tm, vm = k * vs, A = B * hm, Q = A * vm, w = [];
       if (t.length < 3) w.push("Repite el recorrido del flotador al menos 3 veces.");
-      if (L < 5) w.push("Un tramo menor a 5 m da poca precisión. Busca un tramo recto más largo.");
+      if (L < 5) w.push("Un tramo menor a 5 m da poca precisión.");
       return { Q, w, steps: [
         `t̄ = ${fmt(tm, 3)} s → v superficial = ${fmt(L, 2)} / ${fmt(tm, 3)} = ${fmt(vs, 4)} m/s`,
         `v media = ${fmt(k, 2)} × ${fmt(vs, 4)} = ${fmt(vm, 4)} m/s`,
         `h̄ = ${fmt(hm, 3)} m → A = ${fmt(B, 2)} × ${fmt(hm, 3)} = ${fmt(A, 4)} m²`,
         `Q = ${fmt(A, 4)} × ${fmt(vm, 4)} = ${fmt(Q, 5)} m³/s`,
-      ] };
+      ], sub: `Área ${fmt(A, 3)} m² · vel. media ${fmt(vm, 3)} m/s` };
     },
     vert() {
       const type = $("vt-type").value, h = num($("vt-h").value) / 100;
@@ -595,34 +673,34 @@ body{margin:0}[hidden]{display:none!important}
           `h = ${fmt(h, 4)} m · θ = ${fmt(th, 1)}° · Cd = ${fmt(cd, 3)}`,
           `C = 8/15 × ${fmt(cd, 3)} × √(2×9,81) × tan(${fmt(th / 2, 1)}°) = ${fmt(c, 4)}`,
           `Q = ${fmt(c, 4)} × ${fmt(h, 4)}^2,5 = ${fmt(Q, 6)} m³/s`,
-        ] };
+        ], sub: `Carga ${fmt(h * 100, 1)} cm` };
       }
       const L = num($("vt-L").value);
-      if (!(L > 0)) return { err: "Ingresa el ancho de cresta L." };
-      if (h > L / 3) w.push("La carga supera L/3. Las fórmulas pierden precisión; usa un vertedero más ancho.");
-      if (h < 0.06) w.push("Con cargas menores a 6 cm la lámina puede adherirse a la cresta.");
+      if (!(L > 0)) return { err: "Ingresa el ancho de cresta." };
+      if (h > L / 3) w.push("La carga supera un tercio del ancho; la fórmula pierde precisión.");
+      if (h < 0.06) w.push("Con cargas menores a 6 cm la lámina puede pegarse a la cresta.");
       if (type === "rect") {
         const n = num($("vt-n").value), Le = L - 0.1 * n * h, Q = 1.84 * Le * Math.pow(h, 1.5);
         return { Q, w, steps: [
           `h = ${fmt(h, 4)} m · n = ${n}`,
           `L efectivo = ${fmt(L, 3)} − 0,1 × ${n} × ${fmt(h, 4)} = ${fmt(Le, 4)} m`,
           `Q = 1,84 × ${fmt(Le, 4)} × ${fmt(h, 4)}^1,5 = ${fmt(Q, 6)} m³/s`,
-        ] };
+        ], sub: `Carga ${fmt(h * 100, 1)} cm` };
       }
       const Q = 1.859 * L * Math.pow(h, 1.5);
-      return { Q, w, steps: [`h = ${fmt(h, 4)} m · L = ${fmt(L, 3)} m`, `Q = 1,859 × ${fmt(L, 3)} × ${fmt(h, 4)}^1,5 = ${fmt(Q, 6)} m³/s`] };
+      return { Q, w, steps: [`h = ${fmt(h, 4)} m · L = ${fmt(L, 3)} m`, `Q = 1,859 × ${fmt(L, 3)} × ${fmt(h, 4)}^1,5 = ${fmt(Q, 6)} m³/s`], sub: `Carga ${fmt(h * 100, 1)} cm` };
     },
     par() {
       const p = PARSHALL[+$("par-w").value], ha = num($("par-ha").value) / 100, hbRaw = $("par-hb").value.trim();
-      $("par-formula").innerHTML = `Q = ${fmt(p.K, 4)} · Ha<sup>${fmt(p.n, 3)}</sup>`;
+      $("par-formula").innerHTML = `Q = ${fmt(p.K, 4)} · Ha<sup>${fmt(p.n, 3)}</sup> (Ha en m, Q en m³/s)`;
       if (!(ha > 0)) return { err: "Ingresa la carga Ha mayor que cero." };
       const Q = p.K * Math.pow(ha, p.n), w = [], steps = [`W = ${p.w} → K = ${fmt(p.K, 4)}, n = ${fmt(p.n, 3)}`, `Q = ${fmt(p.K, 4)} × ${fmt(ha, 4)}^${fmt(p.n, 3)} = ${fmt(Q, 6)} m³/s`];
       if (hbRaw !== "") {
         const hb = num(hbRaw) / 100, S = hb / ha;
         steps.push(`Sumergencia S = Hb/Ha = ${fmt(S * 100, 1)} % (límite ${fmt(p.s * 100, 0)} %)`);
-        if (S > p.s) w.push(`Flujo sumergido: S = ${fmt(S * 100, 1)} % supera el ${fmt(p.s * 100, 0)} %. El caudal real es menor que el calculado; aplica corrección por sumergencia.`);
+        if (S > p.s) w.push(`Flujo sumergido (${fmt(S * 100, 1)} % > ${fmt(p.s * 100, 0)} %). El caudal real es menor que el calculado.`);
       }
-      return { Q, w, steps };
+      return { Q, w, steps, sub: `Ha ${fmt(ha * 100, 1)} cm` };
     },
   };
 
@@ -633,18 +711,20 @@ body{margin:0}[hidden]{display:none!important}
   const NAMES = { sec: "Molinete (sección media)", vol: "Volumétrico", flot: "Flotador", vert: "Vertedero", par: "Parshall" };
   function compute() {
     const r = methods[current]();
-    const conv = $("conv"), steps = $("steps"), warns = $("warns");
     if (r.err) {
-      $("q-main").innerHTML = "—"; conv.innerHTML = ""; steps.innerHTML = ""; warns.innerHTML = `<p class="err">${r.err}</p>`; lastText = ""; return;
+      $("q-main").innerHTML = "—"; $("q-sub").textContent = ""; $("conv").innerHTML = ""; $("steps").innerHTML = "";
+      $("warns").innerHTML = `<p class="err">${r.err}</p>`; $("qbar-v").textContent = "—"; lastText = ""; return;
     }
-    const Q = r.Q, Ls = Q * 1000;
-    $("q-main").innerHTML = `${fmt(Ls, Ls < 10 ? 3 : 2)}<small>L/s</small>`;
+    const Q = r.Q, Ls = Q * 1000, ds = Ls < 10 ? 3 : 2;
+    $("q-main").innerHTML = `${fmt(Ls, ds)}<small>L/s</small>`;
+    $("q-sub").textContent = `${fmt(Q, 4)} m³/s` + (r.sub ? ` · ${r.sub}` : "");
+    $("qbar-v").textContent = `${fmt(Ls, ds)} L/s`;
     const rows = [["m³/s", fmt(Q, 6)], ["m³/h", fmt(Q * 3600, 2)], ["m³/día", fmt(Q * 86400, 1)], ["L/min", fmt(Ls * 60, 1)], ["GPM (US)", fmt(Q * 15850.3231, 1)]];
-    conv.innerHTML = rows.map(([u, v]) => `<dt>${u}</dt><dd>${v}</dd>`).join("");
-    steps.innerHTML = r.steps.map((s) => `<li>${s}</li>`).join("");
-    warns.innerHTML = r.w.map((s) => `<div class="warn">${s}</div>`).join("");
+    $("conv").innerHTML = rows.map(([u, v]) => `<dt>${u}</dt><dd>${v}</dd>`).join("");
+    $("steps").innerHTML = r.steps.map((s) => `<li>${s}</li>`).join("");
+    $("warns").innerHTML = r.w.map((s) => `<div class="warn">${s}</div>`).join("");
     let head = `Aforo · método ${NAMES[current]}`;
-    if (current === "sec") head += `\nSitio: ${$("c-sitio").value} · Fecha: ${$("c-fecha").value}`;
+    if (current === "sec") head += `\nSitio: ${$("c-sitio").value} · Fecha: ${$("c-fecha").value} · ${tipo === "canal" ? "Canal" : "Río"}`;
     lastText = head + `\nQ = ${fmt(Ls, 3)} L/s (${fmt(Q, 6)} m³/s)\n` + rows.slice(1).map(([u, v]) => `${v} ${u}`).join(" · ") + "\n" + r.steps.join("\n").replace(/<[^>]+>/g, "");
   }
 
@@ -652,7 +732,6 @@ body{margin:0}[hidden]{display:none!important}
     current = m;
     document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", t.dataset.m === m ? "true" : "false"));
     document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== m));
-    $("grid").classList.toggle("wide", m === "sec");
     $("copy-xls").hidden = m !== "sec";
     $("clear").hidden = m !== "sec";
     try { localStorage.setItem("aforo-metodo", m); } catch (e) {}
@@ -661,6 +740,8 @@ body{margin:0}[hidden]{display:none!important}
   document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => select(t.dataset.m)));
   $("inputs").addEventListener("input", compute);
   $("inputs").addEventListener("change", compute);
+  $("qbar-go").addEventListener("click", () => $("result").scrollIntoView({ behavior: "smooth", block: "start" }));
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (current === "sec") compute(); }, 200); });
 
   function copy(text, okMsg) {
     const msg = $("copy-msg");
@@ -685,14 +766,14 @@ body{margin:0}[hidden]{display:none!important}
       ["TOTAL", "", "", "", "", T(c.vm, 4), T(c.sb, 3), T(c.sa, 4), T(c.sq, 5)],
       ["Caudal Q (L/s):", T(c.sq * 1000, 2)],
     ];
-    copy(lines.map((l) => l.join("\t")).join("\n"), "Tabla copiada. Pégala en una celda de Excel con Ctrl+V.");
+    copy(lines.map((l) => l.join("\t")).join("\n"), "Tabla copiada. Pégala en Excel con Ctrl+V.");
   });
 
   let armed = false;
   $("clear").addEventListener("click", () => {
     const b = $("clear");
-    if (!armed) { armed = true; b.textContent = "Confirmar: borrar la cartera"; setTimeout(() => { armed = false; b.textContent = "Nuevo aforo (limpiar)"; }, 3000); return; }
-    armed = false; b.textContent = "Nuevo aforo (limpiar)";
+    if (!armed) { armed = true; b.textContent = "Toca otra vez para borrar la cartera"; setTimeout(() => { armed = false; b.textContent = "Nuevo aforo"; }, 3000); return; }
+    armed = false; b.textContent = "Nuevo aforo";
     ["c-sitio", "c-hi", "c-hf", "c-mi", "c-mf"].forEach((id) => ($(id).value = ""));
     $("c-fecha").value = new Date().toISOString().slice(0, 10);
     cart.d = []; cart.v = []; cart.p = [];
