@@ -3,6 +3,7 @@
  * Recibe los aforos que envía la calculadora y los guarda en Google Drive:
  *
  *   Aforos AURPA/
+ *     Resumen general de aforos – AURPA   (todos los aforos de todos los sitios)
  *     <Sitio>/
  *       Resumen de aforos – <Sitio>       (una fila por aforo, con enlace)
  *       <Sitio> – 2026-10-26/
@@ -38,11 +39,13 @@ function doPost(e) {
 
       var dia = carpetaFecha(carpeta, a.fecha);
       var archivo = crearHojaAforo(dia, a, predio);
-      resumen.appendRow([
+      var fila = [
         limpiar(a.fecha, 20), limpiar(a.hora, 10), limpiar(a.metodo, 40),
         numero(a.q_ls), numero(a.q_m3s), limpiar(a.sitio, 80), limpiar(a.responsable, 80),
         archivo.getUrl(), id, new Date()
-      ]);
+      ];
+      resumen.appendRow(fila);
+      hojaResumenGeneral().appendRow([carpeta.getName()].concat(fila).concat([dia.getUrl()]));
       return responder({ ok: true, carpeta: dia.getUrl(), nombre: dia.getName(), archivo: archivo.getUrl() });
     } finally {
       lock.releaseLock();
@@ -102,6 +105,24 @@ function hojaResumen(carpeta, predio) {
   sh.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#e6f3e2');
   sh.setFrozenRows(1);
   sh.hideColumns(9);
+  return sh;
+}
+
+// Resumen general en "Aforos AURPA": todos los aforos de todos los sitios.
+function hojaResumenGeneral() {
+  var raiz = carpetaRaiz();
+  var nombre = 'Resumen general de aforos – AURPA';
+  var it = raiz.getFilesByName(nombre);
+  if (it.hasNext()) return SpreadsheetApp.open(it.next()).getSheets()[0];
+  var ss = SpreadsheetApp.create(nombre);
+  DriveApp.getFileById(ss.getId()).moveTo(raiz);
+  var sh = ss.getSheets()[0];
+  sh.setName('Aforos');
+  sh.appendRow(['Sitio', 'Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado', 'Carpeta']);
+  sh.getRange(1, 1, 1, 12).setFontWeight('bold').setBackground('#e6f3e2');
+  sh.setFrozenRows(1);
+  sh.hideColumns(7);   // repite el sitio
+  sh.hideColumns(10);  // ID interno
   return sh;
 }
 
