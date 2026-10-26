@@ -302,7 +302,9 @@ body{margin:0}[hidden]{display:none!important}
             <div class="stack">
               <div class="fields">
                 <label class="f full">Sitio de medición
-                  <input id="c-sitio" type="text" value="Medios Reyes B"></label>
+                  <select id="c-sitio-sel" class="sitio-sel"></select></label>
+                <label class="f full" id="c-sitio-w" hidden>Nombre del sitio nuevo
+                  <input id="c-sitio" type="text" autocomplete="off" value="Final Medios Reyes Bajo" placeholder="Ej.: Bocatoma La Esperanza"></label>
                 <label class="f">Fecha
                   <input id="c-fecha" type="date" value="2026-09-08"></label>
                 <label class="f">% altura <span class="unit">(desde el fondo)</span>
@@ -483,8 +485,12 @@ body{margin:0}[hidden]{display:none!important}
       </details>
       <div class="save">
         <p class="hint" id="s-dest"></p>
-        <label class="f" id="s-predio-w">Sitio de medición
-          <input id="s-predio" type="text" autocomplete="off" placeholder="Ej.: La Esperanza"></label>
+        <div class="stack" id="s-predio-w" style="gap:10px">
+          <label class="f">Sitio de medición
+            <select id="s-predio-sel" class="sitio-sel"></select></label>
+          <label class="f" id="s-predio-nw" hidden>Nombre del sitio nuevo
+            <input id="s-predio" type="text" autocomplete="off" placeholder="Ej.: Bocatoma La Esperanza"></label>
+        </div>
         <label class="f">Responsable <span class="unit">(opcional)</span>
           <input id="s-resp" type="text" autocomplete="off"></label>
         <button class="btn primary" id="s-save" type="button">Guardar en Drive de AURPA</button>
@@ -1033,6 +1039,7 @@ body{margin:0}[hidden]{display:none!important}
     $("c-fecha").value = new Date().toISOString().slice(0, 10);
     cart.d = []; cart.v = []; cart.p = [];
     curV = 0;
+    syncPickers();
     renderCartRows(); showDest(); setStep(1);
   });
 
@@ -1061,6 +1068,55 @@ body{margin:0}[hidden]{display:none!important}
   }
   $("c-sitio").addEventListener("input", showDest);
   $("s-resp").addEventListener("input", () => ls.set("aforo-resp", $("s-resp").value));
+
+  // ---------- Lista de sitios de medición ----------
+  // Se arma con las carpetas de sitio del Drive de AURPA; sin señal usa la última lista descargada.
+  const SKEY = "aforo-sitios";
+  const SITIOS_BASE = ["Antes Medios Reyes", "Bocatoma (Derivación)", "Bocatoma (Todo el río)", "Canal reservorios",
+    "Estación limnigráfica La Sorpresa", "Final Medios Reyes Bajo", "Paso Elevado Guabitos", "Puente Cumba", "Puente La Luisa"];
+  const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+  const NUEVO = "__nuevo__";
+  let sitios = [];
+  function mergeSitios(lista) {
+    const vistos = new Set(sitios.map(norm));
+    lista.forEach((s) => { s = String(s || "").trim(); if (s && !vistos.has(norm(s))) { vistos.add(norm(s)); sitios.push(s); } });
+    sitios.sort((a, b) => a.localeCompare(b, "es"));
+    ls.set(SKEY, sitios);
+  }
+  mergeSitios(SITIOS_BASE.concat(ls.get(SKEY, [])));
+
+  const pickers = [
+    { sel: $("c-sitio-sel"), wrap: $("c-sitio-w"), input: $("c-sitio") },
+    { sel: $("s-predio-sel"), wrap: $("s-predio-nw"), input: $("s-predio") },
+  ];
+  function fillPicker(pk) {
+    const val = pk.input.value.trim();
+    const match = sitios.find((s) => norm(s) === norm(val));
+    pk.sel.innerHTML = `<option value="">Elige el sitio…</option>` +
+      sitios.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("") +
+      `<option value="${NUEVO}">＋ Agregar sitio nuevo…</option>`;
+    if (match) { pk.sel.value = match; pk.wrap.hidden = true; if (pk.input.value !== match) pk.input.value = match; }
+    else if (val) { pk.sel.value = NUEVO; pk.wrap.hidden = false; }
+    else { pk.sel.value = ""; pk.wrap.hidden = true; }
+  }
+  function syncPickers() { pickers.forEach(fillPicker); }
+  pickers.forEach((pk) => {
+    pk.sel.addEventListener("change", () => {
+      if (pk.sel.value === NUEVO) {
+        pk.wrap.hidden = false; pk.input.value = ""; pk.input.focus();
+      } else {
+        pk.wrap.hidden = true; pk.input.value = pk.sel.value;
+      }
+      pk.input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  });
+  function cargarSitios() {
+    if (!DRIVE_URL || !navigator.onLine || /claude/i.test(location.hostname)) return;
+    fetch(DRIVE_URL + "?accion=sitios").then((r) => r.json()).then((j) => {
+      if (j && j.ok && Array.isArray(j.sitios)) { mergeSitios(j.sitios); syncPickers(); }
+    }).catch(() => {});
+  }
+  window.addEventListener("online", cargarSitios);
 
   const pad = (n) => String(n).padStart(2, "0");
   function nowParts() { const d = new Date(); return { fecha: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, hora: `${pad(d.getHours())}:${pad(d.getMinutes())}` }; }
@@ -1137,10 +1193,12 @@ body{margin:0}[hidden]{display:none!important}
     try {
       const j = await send(p);
       msg.innerHTML = `Guardado en la carpeta <a href="${esc(j.carpeta)}" target="_blank" rel="noopener">${esc(j.nombre || p.predio)}</a>.` + pendingMsg();
+      mergeSitios([p.predio]); syncPickers();
     } catch (e) {
       if (e.fatal) { msg.textContent = "No se guardó: " + e.message; }
       else {
         const q = ls.get(QKEY, []); q.push(p); ls.set(QKEY, q);
+        mergeSitios([p.predio]); syncPickers();
         msg.innerHTML = "Sin conexión. El aforo quedó guardado en este dispositivo y se enviará solo cuando haya señal." + pendingMsg();
       }
     } finally { btn.disabled = false; btn.textContent = "Guardar en Drive de AURPA"; }
@@ -1194,6 +1252,8 @@ body{margin:0}[hidden]{display:none!important}
   });
 
   loadCart();
+  syncPickers();
+  cargarSitios();
   renderCartRows();
   let start = "sec";
   try { const s = localStorage.getItem("aforo-metodo"); if (s && methods[s]) start = s; } catch (e) {}

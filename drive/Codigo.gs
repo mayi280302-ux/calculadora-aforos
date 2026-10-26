@@ -59,8 +59,28 @@ function doPost(e) {
   }
 }
 
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.accion === 'sitios') return responder({ ok: true, sitios: listarSitios() });
   return responder({ ok: true, servicio: 'Calculadora de Aforos AURPA' });
+}
+
+// Nombres de las carpetas de sitio (dentro de cada método, o sueltas si aún no se organizaron).
+function listarSitios() {
+  var raiz = carpetaRaiz();
+  var metodos = METODOS.map(normalizar);
+  var vistos = {}, lista = [];
+  var agregar = function (nombre) { var k = normalizar(nombre); if (!vistos[k]) { vistos[k] = 1; lista.push(nombre); } };
+  var it = raiz.getFolders();
+  while (it.hasNext()) {
+    var f = it.next();
+    if (metodos.indexOf(normalizar(f.getName())) >= 0) {
+      var it2 = f.getFolders();
+      while (it2.hasNext()) agregar(it2.next().getName());
+    } else {
+      agregar(f.getName());
+    }
+  }
+  return lista.sort(function (a, b) { return a.localeCompare(b, 'es'); });
 }
 
 // ---------- carpetas ----------
