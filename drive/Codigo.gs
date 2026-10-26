@@ -256,6 +256,47 @@ function completarMiras() {
   Logger.log('Filas con mira completada: ' + llenos);
 }
 
+// Ejecutar desde el editor (▷ Ejecutar → reconstruirResumenMetodo) si el resumen de un método
+// quedó con filas corridas o repetidas: lo vuelve a armar a partir de los resúmenes de cada sitio.
+function reconstruirResumenMetodo() {
+  var metodos = METODOS.map(normalizar);
+  var it = carpetaRaiz().getFolders();
+  while (it.hasNext()) {
+    var metodo = it.next();
+    if (metodos.indexOf(normalizar(metodo.getName())) < 0) continue;
+    var destino = hojaResumenMetodo(metodo);
+    var encD = destino.getRange(1, 1, 1, destino.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
+    var filas = [], vistos = {};
+    var sitios = metodo.getFolders();
+    while (sitios.hasNext()) {
+      var s = sitios.next();
+      var f = s.getFilesByName('Resumen de aforos – ' + s.getName());
+      if (!f.hasNext()) continue;
+      var sh = conMira(conNumero(SpreadsheetApp.open(f.next()).getSheets()[0]));
+      var n = sh.getLastRow() - 1; if (n < 1) continue;
+      var encS = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
+      sh.getRange(2, 1, n, encS.length).getValues().forEach(function (r) {
+        var id = r[encS.indexOf('ID')];
+        if (id && vistos[id]) return;
+        if (id) vistos[id] = 1;
+        var carpeta = '';
+        var url = String(r[encS.indexOf('Archivo')] || '');
+        var m = url.match(/\/d\/([A-Za-z0-9_-]+)/);
+        if (m) { try { var p = DriveApp.getFileById(m[1]).getParents(); if (p.hasNext()) carpeta = p.next().getUrl(); } catch (e) {} }
+        filas.push(encD.map(function (h) {
+          if (h === 'Sitio') return s.getName();
+          if (h === 'Carpeta') return carpeta;
+          var k = encS.indexOf(h); return k >= 0 ? r[k] : '';
+        }));
+      });
+    }
+    if (destino.getLastRow() > 1) destino.getRange(2, 1, destino.getLastRow() - 1, destino.getLastColumn()).clearContent();
+    if (filas.length) destino.getRange(2, 1, filas.length, encD.length).setValues(filas);
+    numerar(destino);
+    Logger.log(metodo.getName() + ': ' + filas.length + ' aforos');
+  }
+}
+
 // ---------- columna "No." ----------
 // Resúmenes creados antes de existir la columna: se le agrega al inicio.
 function conNumero(sh) {
