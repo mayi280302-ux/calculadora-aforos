@@ -1056,8 +1056,8 @@ body{margin:0}[hidden]{display:none!important}
     $("s-predio-w").hidden = current === "sec";
     const s = sitioActual();
     $("s-dest").innerHTML = current === "sec"
-      ? (s ? `Se guarda en la carpeta <strong>${esc(s)}</strong>.` : "Escribe el sitio de medición en «Datos del aforo».")
-      : "";
+      ? (s ? `Se guarda en <strong>Molinete › ${esc(s)}</strong>.` : "Escribe el sitio de medición en «Datos del aforo».")
+      : `Se guarda en la carpeta <strong>${esc(OTROS[current] || "")}</strong>, dentro del sitio que escribas.`;
   }
   $("c-sitio").addEventListener("input", showDest);
   $("s-resp").addEventListener("input", () => ls.set("aforo-resp", $("s-resp").value));

@@ -4,6 +4,7 @@
  *
  *   Aforos AURPA/
  *     Resumen general de aforos – AURPA   (todos los aforos de todos los sitios)
+ *     <Método>/                            (Molinete, Volumétrico, Flotador, Vertedero, Parshall)
  *     <Sitio>/
  *       Resumen de aforos – <Sitio>       (una fila por aforo, con enlace)
  *       <Sitio> – 2026-10-26/
@@ -29,7 +30,7 @@ function doPost(e) {
     var lock = LockService.getScriptLock();
     lock.waitLock(20000);
     try {
-      var carpeta = carpetaPredio(predio);
+      var carpeta = carpetaPredio(predio, carpetaMetodo(nombreMetodo(a.metodo)));
       var resumen = hojaResumen(carpeta, predio);
 
       // Si este aforo ya se había guardado (reintento sin señal), no se duplica.
@@ -75,15 +76,48 @@ function carpetaRaiz() {
   return raiz;
 }
 
-function carpetaPredio(predio) {
-  var raiz = carpetaRaiz();
-  var clave = normalizar(predio);
-  var it = raiz.getFolders();
+// Una carpeta por método de aforo dentro de "Aforos AURPA".
+var METODOS = ['Molinete', 'Volumétrico', 'Flotador', 'Vertedero', 'Parshall'];
+function nombreMetodo(m) {
+  var t = normalizar(m || '');
+  for (var i = 0; i < METODOS.length; i++) if (t.indexOf(normalizar(METODOS[i])) === 0) return METODOS[i];
+  return 'Molinete';
+}
+function buscarOCrear(padre, nombre) {
+  var clave = normalizar(nombre);
+  var it = padre.getFolders();
   while (it.hasNext()) {
     var f = it.next();
     if (normalizar(f.getName()) === clave) return f;   // "La Esperanza" = "la esperanza "
   }
-  return raiz.createFolder(predio);
+  return padre.createFolder(nombre);
+}
+function carpetaMetodo(metodo) { return buscarOCrear(carpetaRaiz(), metodo); }
+function carpetaPredio(predio, carpetaDelMetodo) { return buscarOCrear(carpetaDelMetodo, predio); }
+
+// Ejecutar UNA vez desde el editor (▷ Ejecutar → organizarPorMetodo):
+// mueve las carpetas de sitio que están sueltas en "Aforos AURPA" a la carpeta de su método.
+function organizarPorMetodo() {
+  var raiz = carpetaRaiz();
+  var metodos = METODOS.map(normalizar);
+  var sueltas = [];
+  var it = raiz.getFolders();
+  while (it.hasNext()) { var f = it.next(); if (metodos.indexOf(normalizar(f.getName())) < 0) sueltas.push(f); }
+  sueltas.forEach(function (sitio) {
+    var metodo = 'Molinete';
+    var res = sitio.getFilesByName('Resumen de aforos – ' + sitio.getName());
+    if (res.hasNext()) {
+      var sh = SpreadsheetApp.open(res.next()).getSheets()[0];
+      var cm = columna(sh, 'Método');
+      if (cm && sh.getLastRow() > 1) metodo = nombreMetodo(sh.getRange(2, cm).getValue());
+    }
+    var destino = carpetaMetodo(metodo);
+    var existente = null, it2 = destino.getFolders();
+    while (it2.hasNext()) { var g = it2.next(); if (normalizar(g.getName()) === normalizar(sitio.getName())) existente = g; }
+    if (!existente) sitio.moveTo(destino);
+    else Logger.log('Ya existe ' + metodo + '/' + sitio.getName() + ': revisar a mano.');
+  });
+  Logger.log('Carpetas movidas: ' + sueltas.length);
 }
 
 // Subcarpeta "<Sitio> – <fecha>" dentro de la carpeta del sitio.
@@ -162,14 +196,17 @@ function numerar(sh) {
 
 // Ejecutar UNA vez desde el editor (▷ Ejecutar → numerarTodo) para numerar los resúmenes que ya existen.
 function numerarTodo() {
-  var raiz = carpetaRaiz();
   numerar(hojaResumenGeneral());
-  var it = raiz.getFolders();
-  while (it.hasNext()) {
-    var carpeta = it.next();
-    var f = carpeta.getFilesByName('Resumen de aforos – ' + carpeta.getName());
-    if (f.hasNext()) numerar(conNumero(SpreadsheetApp.open(f.next()).getSheets()[0]));
-  }
+  var recorrer = function (padre) {
+    var it = padre.getFolders();
+    while (it.hasNext()) {
+      var carpeta = it.next();
+      var f = carpeta.getFilesByName('Resumen de aforos – ' + carpeta.getName());
+      if (f.hasNext()) numerar(conNumero(SpreadsheetApp.open(f.next()).getSheets()[0]));
+      else if (METODOS.map(normalizar).indexOf(normalizar(carpeta.getName())) >= 0) recorrer(carpeta);
+    }
+  };
+  recorrer(carpetaRaiz());
 }
 
 function buscarPorId(sh, id) {
