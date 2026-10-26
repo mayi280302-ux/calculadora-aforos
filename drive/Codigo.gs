@@ -335,6 +335,10 @@ function numerar(sh) {
   var nums = [];
   for (var i = 1; i <= n; i++) nums.push([i]);
   sh.getRange(2, 1, n, 1).setValues(nums).setHorizontalAlignment('center');
+  // Formato fijo por columna (evita que un número o una hora se vean como fecha).
+  var formatos = { 'No.': '0', 'Fecha': 'dd/MM/yyyy', 'Hora': 'HH:mm', 'Caudal (L/s)': '#,##0.0', 'Caudal (m³/s)': '0.0000',
+    'Mira inicial (cm)': '0.0', 'Mira final (cm)': '0.0', 'Guardado': 'dd/MM/yyyy HH:mm' };
+  Object.keys(formatos).forEach(function (t) { var c = columna(sh, t); if (c) sh.getRange(2, c, n, 1).setNumberFormat(formatos[t]); });
 }
 
 // Ejecutar UNA vez desde el editor (▷ Ejecutar → numerarTodo) para numerar los resúmenes que ya existen.
