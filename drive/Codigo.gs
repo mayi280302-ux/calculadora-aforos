@@ -44,8 +44,11 @@ function doPost(e) {
         numero(a.q_ls), numero(a.q_m3s), limpiar(a.sitio, 80), limpiar(a.responsable, 80),
         archivo.getUrl(), id, new Date()
       ];
-      resumen.appendRow(fila);
-      hojaResumenGeneral().appendRow([carpeta.getName()].concat(fila).concat([dia.getUrl()]));
+      resumen.appendRow([''].concat(fila));
+      numerar(resumen);
+      var general = hojaResumenGeneral();
+      general.appendRow(['', carpeta.getName()].concat(fila).concat([dia.getUrl()]));
+      numerar(general);
       return responder({ ok: true, carpeta: dia.getUrl(), nombre: dia.getName(), archivo: archivo.getUrl() });
     } finally {
       lock.releaseLock();
@@ -96,15 +99,15 @@ function carpetaFecha(carpetaSitio, fecha) {
 function hojaResumen(carpeta, predio) {
   var nombre = 'Resumen de aforos – ' + carpeta.getName();
   var it = carpeta.getFilesByName(nombre);
-  if (it.hasNext()) return SpreadsheetApp.open(it.next()).getSheets()[0];
+  if (it.hasNext()) return conNumero(SpreadsheetApp.open(it.next()).getSheets()[0]);
   var ss = SpreadsheetApp.create(nombre);
   DriveApp.getFileById(ss.getId()).moveTo(carpeta);
   var sh = ss.getSheets()[0];
   sh.setName('Aforos');
-  sh.appendRow(['Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado']);
-  sh.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#e6f3e2');
+  sh.appendRow(['No.', 'Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado']);
+  sh.getRange(1, 1, 1, 11).setFontWeight('bold').setBackground('#e6f3e2');
   sh.setFrozenRows(1);
-  sh.hideColumns(9);
+  sh.hideColumns(10);  // ID interno
   return sh;
 }
 
@@ -113,23 +116,69 @@ function hojaResumenGeneral() {
   var raiz = carpetaRaiz();
   var nombre = 'Resumen general de aforos – AURPA';
   var it = raiz.getFilesByName(nombre);
-  if (it.hasNext()) return SpreadsheetApp.open(it.next()).getSheets()[0];
+  if (it.hasNext()) return conNumero(SpreadsheetApp.open(it.next()).getSheets()[0]);
   var ss = SpreadsheetApp.create(nombre);
   DriveApp.getFileById(ss.getId()).moveTo(raiz);
   var sh = ss.getSheets()[0];
   sh.setName('Aforos');
-  sh.appendRow(['Sitio', 'Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado', 'Carpeta']);
-  sh.getRange(1, 1, 1, 12).setFontWeight('bold').setBackground('#e6f3e2');
+  sh.appendRow(['No.', 'Sitio', 'Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado', 'Carpeta']);
+  sh.getRange(1, 1, 1, 13).setFontWeight('bold').setBackground('#e6f3e2');
   sh.setFrozenRows(1);
-  sh.hideColumns(7);   // repite el sitio
-  sh.hideColumns(10);  // ID interno
+  sh.hideColumns(8);   // repite el sitio
+  sh.hideColumns(11);  // ID interno
   return sh;
+}
+
+// ---------- columna "No." ----------
+// Resúmenes creados antes de existir la columna: se le agrega al inicio.
+function conNumero(sh) {
+  if (String(sh.getRange(1, 1).getValue()).trim() !== 'No.') {
+    sh.insertColumnBefore(1);
+    sh.getRange(1, 1).setValue('No.').setFontWeight('bold').setBackground('#e6f3e2');
+    sh.setColumnWidth(1, 50);
+  }
+  return sh;
+}
+
+function columna(sh, titulo) {
+  var enc = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  for (var i = 0; i < enc.length; i++) if (String(enc[i]).trim() === titulo) return i + 1;
+  return 0;
+}
+
+// Ordena por fecha y hora (del más antiguo al más reciente) y numera 1, 2, 3…
+function numerar(sh) {
+  var n = sh.getLastRow() - 1;
+  if (n < 1) return;
+  var cf = columna(sh, 'Fecha'), ch = columna(sh, 'Hora');
+  var orden = [];
+  if (cf) orden.push({ column: cf, ascending: true });
+  if (ch) orden.push({ column: ch, ascending: true });
+  if (orden.length) sh.getRange(2, 1, n, sh.getLastColumn()).sort(orden);
+  var nums = [];
+  for (var i = 1; i <= n; i++) nums.push([i]);
+  sh.getRange(2, 1, n, 1).setValues(nums).setHorizontalAlignment('center');
+}
+
+// Ejecutar UNA vez desde el editor (▷ Ejecutar → numerarTodo) para numerar los resúmenes que ya existen.
+function numerarTodo() {
+  var raiz = carpetaRaiz();
+  numerar(hojaResumenGeneral());
+  var it = raiz.getFolders();
+  while (it.hasNext()) {
+    var carpeta = it.next();
+    var f = carpeta.getFilesByName('Resumen de aforos – ' + carpeta.getName());
+    if (f.hasNext()) numerar(conNumero(SpreadsheetApp.open(f.next()).getSheets()[0]));
+  }
 }
 
 function buscarPorId(sh, id) {
   if (!id || sh.getLastRow() < 2) return null;
-  var datos = sh.getRange(2, 8, sh.getLastRow() - 1, 2).getValues(); // Archivo, ID
-  for (var i = 0; i < datos.length; i++) if (datos[i][1] === id) return datos[i][0];
+  var ca = columna(sh, 'Archivo'), ci = columna(sh, 'ID');
+  if (!ca || !ci) return null;
+  var n = sh.getLastRow() - 1;
+  var archivos = sh.getRange(2, ca, n, 1).getValues(), ids = sh.getRange(2, ci, n, 1).getValues();
+  for (var i = 0; i < n; i++) if (ids[i][0] === id) return archivos[i][0];
   return null;
 }
 
