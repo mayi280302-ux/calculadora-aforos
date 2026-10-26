@@ -178,11 +178,70 @@ svg { width: 100%; height: auto; display: block; }
 .qbar .ql { font-size: .8rem; color: var(--muted); font-weight: 700; }
 .qbar .qv { font-size: 1.5rem; font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; line-height: 1.1; }
 .qbar .btn { margin-left: auto; }
-@media (min-width: 900px) { .qbar { display: none; } }
+@media (min-width: 900px) { .wrap:not(.flow) ~ .qbar { display: none; } }
 
 .foot { color: var(--muted); font-size: .8rem; text-align: center; margin: 0; }
 .foot.autor { font-size: .72rem; opacity: .75; letter-spacing: .02em; margin-top: -8px; }
 @media (prefers-reduced-motion: reduce) { details.fx > summary::before { transition: none; } }
+
+/* ---------- Diseño más limpio: tarjetas sin borde marcado ---------- */
+.card { border-color: color-mix(in srgb, var(--line) 55%, transparent); box-shadow: 0 1px 2px rgba(20, 40, 20, .04), 0 6px 20px rgba(20, 40, 20, .05); }
+.wrap { gap: 16px; }
+
+/* ---------- Otros métodos ---------- */
+.tab.more[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.more-menu { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; border-radius: var(--radius); background: var(--surface); box-shadow: 0 6px 20px rgba(20, 40, 20, .08); margin-top: -6px; }
+.more-menu .tab { flex: 1 1 140px; }
+
+/* ---------- Aviso sin conexión ---------- */
+.offline { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--warn-soft); color: var(--warn); font-size: .85rem; font-weight: 700; text-align: center; }
+
+/* ---------- Pasos del molinete ---------- */
+.wrap.flow { max-width: 760px; }
+.wrap.flow .grid { grid-template-columns: minmax(0, 1fr); }
+.wrap.flow #inputs, .wrap.flow [data-panel="sec"] { display: contents; }
+.wrap.flow .stepper { order: 0; }
+.wrap.flow [data-step="1"], .wrap.flow [data-step="2"] { order: 1; }
+.wrap.flow #result { order: 2; }
+.wrap.flow #c-formulas { order: 3; }
+.wrap:not(.flow) #c-back-w { display: none; }
+.stepper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stepper button { width: 100%; display: flex; flex-direction: column; gap: 7px; align-items: flex-start; background: none; border: 0; padding: 4px 0; font: 700 .82rem var(--font-body); color: var(--muted); cursor: pointer; text-align: left; }
+.stepper .bar { display: block; width: 100%; height: 6px; border-radius: 99px; background: var(--line); transition: background .25s; }
+.stepper button.done .bar, .stepper button[aria-current="step"] .bar { background: var(--brand); }
+.stepper button[aria-current="step"] { color: var(--ink); }
+.stepnav { display: flex; justify-content: space-between; gap: 10px; }
+.stepnav .btn { min-width: 0; }
+details.fx.flat { border-top: 0; padding-top: 0; }
+
+/* ---------- Tarjeta de una vertical ---------- */
+.vcard { display: grid; gap: 14px; padding: 16px; border-radius: 14px; background: var(--brand-soft); }
+.vhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.vhead .vn { font-size: 1.35rem; font-weight: 800; color: var(--ink); }
+.vhead .vl { font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.vhead .tag { font-size: .72rem; font-weight: 800; color: var(--brand); background: var(--surface); padding: 2px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
+.vin { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.vin input { font-size: 1.45rem; font-weight: 700; text-align: center; min-height: 58px; background: var(--surface); font-variant-numeric: tabular-nums; }
+.vfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .9rem; color: var(--muted); }
+.vfoot #vc-q { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.vpct { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; }
+.vpct input { width: 70px; min-height: 36px; padding: 6px 8px; text-align: center; background: var(--surface); }
+.vnav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vnav .btn { min-height: 50px; font-size: 1rem; }
+@media (prefers-reduced-motion: no-preference) { .vcard.swap { animation: vswap .22s ease-out; } }
+@keyframes vswap { from { opacity: .4; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Sección transversal interactiva ---------- */
+.chart { cursor: pointer; }
+.sv-vel-col { fill: var(--river); }
+.sv-hit { fill: transparent; cursor: pointer; }
+.sv-cur { stroke: var(--brand); stroke-width: 3; }
+.sv-curlbl { fill: var(--brand); }
+.sv-curtxt { fill: var(--on-brand); font: 800 11px var(--font-body); }
+.sv-miss { stroke: var(--point); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.sv-missdot { fill: var(--surface); stroke: var(--point); stroke-width: 2; }
+.swq { width: 16px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, color-mix(in srgb, var(--river) 20%, transparent), var(--river)); display: inline-block; }
+.dot.miss { background: var(--surface); box-shadow: inset 0 0 0 2px var(--point); }
 body{margin:0}[hidden]{display:none!important}
 </style>
 </head>
@@ -198,21 +257,32 @@ body{margin:0}[hidden]{display:none!important}
     </div>
   </header>
 
-  <nav class="tabs" role="tablist" aria-label="Método de aforo">
-    <button class="tab" role="tab" id="t-sec" data-m="sec">Molinete</button>
-    <button class="tab" role="tab" id="t-vol" data-m="vol">Volumétrico</button>
-    <button class="tab" role="tab" id="t-flot" data-m="flot">Flotador</button>
-    <button class="tab" role="tab" id="t-vert" data-m="vert">Vertedero</button>
-    <button class="tab" role="tab" id="t-par" data-m="par">Parshall</button>
+  <p class="offline" id="offline" hidden>Sin conexión · los aforos que guardes se enviarán al Drive cuando vuelva la señal.</p>
+
+  <nav class="tabs" aria-label="Método de aforo">
+    <button class="tab" type="button" id="t-sec" data-m="sec">Molinete</button>
+    <button class="tab more" type="button" id="t-more" aria-expanded="false" aria-controls="more-menu"><span id="t-more-txt">Otros métodos</span> <span aria-hidden="true">▾</span></button>
   </nav>
+  <div class="more-menu" id="more-menu" hidden>
+    <button class="tab" type="button" id="t-vol" data-m="vol">Volumétrico</button>
+    <button class="tab" type="button" id="t-flot" data-m="flot">Flotador</button>
+    <button class="tab" type="button" id="t-vert" data-m="vert">Vertedero</button>
+    <button class="tab" type="button" id="t-par" data-m="par">Parshall</button>
+  </div>
 
   <div class="grid">
     <div class="stack" id="inputs">
 
       <!-- ================= MOLINETE ================= -->
       <div data-panel="sec" class="stack" hidden>
-        <section class="card">
-          <h2 class="step"><b>1</b>Sección</h2>
+        <ol class="stepper" id="c-stepper" aria-label="Pasos del aforo">
+          <li><button type="button" data-go="1"><span class="bar"></span><span class="lbl">1 · Sección</span></button></li>
+          <li><button type="button" data-go="2"><span class="bar"></span><span class="lbl">2 · Verticales</span></button></li>
+          <li><button type="button" data-go="3"><span class="bar"></span><span class="lbl">3 · Resultado</span></button></li>
+        </ol>
+
+        <section class="card" data-step="1">
+          <h2>Sección</h2>
           <div class="seg" role="radiogroup" aria-label="Tipo de sección">
             <input type="radio" name="c-tipo" id="c-tipo-rio" value="rio" checked>
             <label for="c-tipo-rio">Río<small>orillas en cero</small></label>
@@ -248,34 +318,63 @@ body{margin:0}[hidden]{display:none!important}
               </div>
             </div>
           </details>
+          <div class="stepnav"><span></span><button class="btn primary" type="button" data-go="2">Siguiente: verticales →</button></div>
         </section>
 
-        <section class="card">
-          <h2 class="step"><b>2</b>Verticales</h2>
-          <p class="desc">Anota en cada vertical la profundidad y la velocidad del molinete.</p>
-          <div class="tablewrap">
-            <table id="c-table">
-              <thead><tr>
-                <th>#</th><th>Distancia<br>(cm)</th><th>Prof.<br>(cm)</th><th>Vel.<br>(m/s)</th>
-                <th class="dcol">% altura</th><th class="dcol">Altura lect. (cm)</th><th class="dcol">Faja b (m)</th><th class="dcol">Área (m²)</th>
-                <th>q<br>(L/s)</th>
-              </tr></thead>
-              <tbody id="c-rows"></tbody>
-            </table>
-          </div>
-          <label class="switch"><input type="checkbox" id="c-detail"> Mostrar columnas de cálculo</label>
-          <p class="hint" id="c-hint"></p>
-        </section>
-
-        <section class="card">
-          <h2 class="step"><b>3</b>Sección transversal</h2>
-          <div id="c-svg"></div>
+        <section class="card" data-step="2">
+          <h2>Verticales</h2>
+          <div class="chart" id="c-svg" title="Toca una vertical para editarla"></div>
           <div class="legend">
             <span><i class="sw"></i>Lecho</span>
-            <span><i class="sw surf"></i>Espejo de agua</span>
-            <span><i class="dot"></i>Punto de velocidad</span>
+            <span><i class="sw surf"></i>Espejo</span>
+            <span><i class="swq"></i>Más velocidad</span>
+            <span><i class="dot"></i>Punto medido</span>
+            <span><i class="dot miss"></i>Sin datos</span>
           </div>
-          <details class="fx">
+
+          <div class="vcard" id="vcard">
+            <div class="vhead">
+              <span class="vn" id="vc-title">Vertical 1</span>
+              <span class="vl" id="vc-l"></span>
+            </div>
+            <div class="vin">
+              <label class="f">Profundidad <span class="unit">(cm)</span>
+                <input id="vc-d" type="text" autocomplete="off" inputmode="decimal" enterkeyhint="next" data-vf="d"></label>
+              <label class="f">Velocidad <span class="unit">(m/s)</span>
+                <input id="vc-v" type="text" autocomplete="off" inputmode="decimal" enterkeyhint="next" data-vf="v"></label>
+            </div>
+            <div class="vfoot">
+              <span id="vc-q"></span>
+              <label class="vpct">% altura <input id="vc-p" type="text" autocomplete="off" inputmode="decimal" enterkeyhint="next" data-vf="p"></label>
+            </div>
+            <div class="vnav">
+              <button class="btn" type="button" id="vc-prev">← Anterior</button>
+              <button class="btn primary" type="button" id="vc-next">Siguiente →</button>
+            </div>
+          </div>
+          <p class="hint" id="c-hint"></p>
+
+          <details class="fx" id="c-tabla">
+            <summary>Ver todas las verticales (tabla)</summary>
+            <div class="stack">
+              <div class="tablewrap">
+                <table id="c-table">
+                  <thead><tr>
+                    <th>#</th><th>Distancia<br>(cm)</th><th>Prof.<br>(cm)</th><th>Vel.<br>(m/s)</th>
+                    <th class="dcol">% altura</th><th class="dcol">Altura lect. (cm)</th><th class="dcol">Faja b (m)</th><th class="dcol">Área (m²)</th>
+                    <th>q<br>(L/s)</th>
+                  </tr></thead>
+                  <tbody id="c-rows"></tbody>
+                </table>
+              </div>
+              <label class="switch"><input type="checkbox" id="c-detail"> Mostrar columnas de cálculo</label>
+            </div>
+          </details>
+          <div class="stepnav"><button class="btn" type="button" data-go="1">← Sección</button><button class="btn primary" type="button" data-go="3">Ver resultado →</button></div>
+        </section>
+
+        <section class="card" data-step="3" id="c-formulas">
+          <details class="fx flat">
             <summary>Fórmulas que usa (ISO 748)</summary>
             <div class="stack">
               <p class="desc">Método de la sección media: cada vertical representa su propio panel; su profundidad y su velocidad se aplican a todo el panel.</p>
@@ -397,6 +496,7 @@ body{margin:0}[hidden]{display:none!important}
         <button class="btn ghost" id="clear" type="button">Nuevo aforo</button>
       </div>
       <p class="hint" id="copy-msg"></p>
+      <div class="stepnav" id="c-back-w"><button class="btn" type="button" data-go="2">← Verticales</button><span></span></div>
     </aside>
   </div>
 
@@ -434,6 +534,7 @@ body{margin:0}[hidden]{display:none!important}
   };
   let tipo = "rio";
   let cart = SECS.rio;
+  let curV = 0, curStep = 1;   // vertical que se está llenando y paso del molinete (1 Sección, 2 Verticales, 3 Resultado)
   const HEAD_IDS = ["c-sitio", "c-fecha", "c-hi", "c-hf", "c-pct", "c-mi", "c-mf"];
 
   function loadCart() {
@@ -497,12 +598,80 @@ body{margin:0}[hidden]{display:none!important}
     }
     html += `<tr class="tot"><td colspan="4" style="text-align:left">Total</td><td class="dcol"></td><td class="num dcol"></td><td class="num dcol" id="c-sb"></td><td class="num dcol" id="c-sa"></td><td class="num q" id="c-sq"></td></tr>`;
     $("c-rows").innerHTML = html;
+    renderVCard(false);
   }
   $("c-rows").addEventListener("input", (e) => {
     const t = e.target; if (!t.dataset.f) return;
     cart[t.dataset.f][+t.dataset.k] = t.value;
+    if (+t.dataset.k === curV) { const c = $("vc-" + t.dataset.f); if (c) c.value = t.value; }
   });
   $("c-n").addEventListener("input", () => { renderCartRows(); });
+
+  // ---------- Tarjeta de una vertical a la vez ----------
+  function renderVCard(animate) {
+    const nv = nVerticals();
+    if (!nv) { $("vcard").hidden = true; return; }
+    $("vcard").hidden = false;
+    curV = Math.max(0, Math.min(curV, nv - 1));
+    ["d", "v", "p"].forEach((f) => { $("vc-" + f).value = cart[f][curV] ?? ""; });
+    updateVCardInfo();
+    if (animate) { const c = $("vcard"); c.classList.remove("swap"); void c.offsetWidth; c.classList.add("swap"); }
+  }
+  function updateVCardInfo() {
+    const nv = nVerticals(); if (!nv) return;
+    const L = num($("c-esp").value), n = nIntervals(), b = L > 0 && n > 0 ? L / n : NaN;
+    const canal = tipo === "canal";
+    const Lk = canal ? b * curV : b * (curV + 1);
+    const edge = canal ? (curV === 0 || curV === nv - 1) : curV === nv - 1;
+    $("vc-title").innerHTML = `Vertical ${curV + 1} <span class="vl">de ${nv}</span>` + (edge ? `<span class="tag">${canal ? "pared" : "orilla"}</span>` : "");
+    $("vc-l").textContent = isFinite(Lk) ? `L = ${fmt(Lk, 1)} cm` : "";
+    const r = lastCart && lastCart.rows ? lastCart.rows[curV] : null;
+    $("vc-q").textContent = r && isFinite(r.q) ? `q = ${fix(r.q * 1000, 2)} L/s` : "q = —";
+    const pctDef = num($("c-pct").value);
+    $("vc-p").placeholder = isFinite(pctDef) ? String(pctDef) : "";
+    $("vc-prev").disabled = curV === 0;
+    $("vc-next").textContent = curV === nv - 1 ? "Ver resultado →" : "Siguiente →";
+  }
+  function setV(k, focus) {
+    const nv = nVerticals(); if (!nv) return;
+    const nk = Math.max(0, Math.min(k, nv - 1));
+    const changed = nk !== curV;
+    curV = nk;
+    renderVCard(changed);
+    compute();
+    if (focus) { const i = $("vc-d"); i.focus(); try { i.select(); } catch (e) {} }
+  }
+  $("vcard").addEventListener("input", (e) => {
+    const t = e.target, f = t.dataset.vf; if (!f) return;
+    cart[f][curV] = t.value;
+    const cell = $(`c-${f}-${curV}`); if (cell) cell.value = t.value;
+  });
+  $("vc-prev").addEventListener("click", () => setV(curV - 1, false));
+  $("vc-next").addEventListener("click", () => { if (curV >= nVerticals() - 1) setStep(3); else setV(curV + 1, false); });
+  $("c-svg").addEventListener("click", (e) => {
+    const h = e.target.closest("[data-k]"); if (!h) return;
+    setV(+h.dataset.k, false);
+    if (curStep !== 2) setStep(2);
+  });
+
+  // ---------- Pasos del molinete ----------
+  function setStep(s) {
+    curStep = s;
+    const flow = current === "sec";
+    document.querySelectorAll('[data-panel="sec"] [data-step]').forEach((el) => (el.hidden = flow && +el.dataset.step !== s));
+    $("result").hidden = flow && s !== 3;
+    $("qbar").hidden = flow && s === 3;
+    document.querySelectorAll("#c-stepper button").forEach((b) => {
+      const g = +b.dataset.go;
+      if (g === s) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+      b.classList.toggle("done", g < s);
+    });
+    if (flow) { compute(); window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }
+  }
+  document.addEventListener("click", (e) => {
+    const g = e.target.closest("[data-go]"); if (!g) return;
+    setStep(+g.dataset.go);
+  });
 
   function cartCalc() {
     const L = num($("c-esp").value), n = nIntervals(), pctDef = num($("c-pct").value);
@@ -535,12 +704,15 @@ body{margin:0}[hidden]{display:none!important}
     }
     const vm = sa > 0 ? sq / sa : NaN;
     set("c-sb", fix(sb, 3)); set("c-sa", fix(sa, 4)); set("c-sq", fix(sq * 1000, 2));
-    drawCart(L, rows);
+    drawCart(L, rows, b, canal);
     saveCart();
     return { L, n, b, pctDef, rows, sb, sa, sq, vm };
   }
 
-  function drawCart(L, rows) {
+  // Sección transversal: el agua se pinta más intensa donde la velocidad es mayor,
+  // la vertical actual se resalta, las verticales sin datos se marcan en rojo y
+  // tocar una vertical la abre para editarla.
+  function drawCart(L, rows, b, canal) {
     const box = $("c-svg");
     if (!(L > 0) || !rows.length) { box.innerHTML = ""; return; }
     const narrow = box.clientWidth && box.clientWidth < 520;
@@ -558,17 +730,48 @@ body{margin:0}[hidden]{display:none!important}
     s += `<text class="sv-txt" x="${(pl + W - pr) / 2}" y="${H - 1}" text-anchor="middle">Distancia (cm)</text>`;
     const pts = [[0, 0]].concat(rows.map((r) => [r.Lk, isFinite(r.d) ? r.d : 0])).concat([[L, 0]]);
     const poly = pts.map(([x, d]) => `${sx(x).toFixed(1)},${sy(d).toFixed(1)}`).join(" ");
+    s += `<defs><clipPath id="c-clip"><polygon points="${poly}"/></clipPath></defs>`;
     s += `<polygon class="sv-water" points="${poly}"/>`;
+    // Franja de cada vertical (su panel), con intensidad según la velocidad
+    const panel = (r, k) => {
+      if (canal) return [Math.max(0, r.Lk - b / 2), Math.min(L, r.Lk + b / 2)];
+      return [Math.max(0, r.Lk - b), r.Lk];
+    };
+    const vmax = Math.max(0.0001, ...rows.map((r) => (isFinite(r.v) ? r.v : 0)));
+    s += `<g clip-path="url(#c-clip)">`;
+    rows.forEach((r, k) => {
+      if (!isFinite(r.v) || !(r.v > 0)) return;
+      const [x0, x1] = panel(r, k);
+      s += `<rect class="sv-vel-col" x="${sx(x0).toFixed(1)}" y="${sy(0)}" width="${Math.max(0, sx(x1) - sx(x0)).toFixed(1)}" height="${(sy(ymax) - sy(0)).toFixed(1)}" fill-opacity="${(0.12 + 0.68 * (r.v / vmax)).toFixed(2)}"/>`;
+    });
+    s += `</g>`;
     rows.forEach((r) => { if (isFinite(r.d) && r.d > 0) s += `<line class="sv-vert" x1="${sx(r.Lk)}" x2="${sx(r.Lk)}" y1="${sy(0)}" y2="${sy(r.d)}"/>`; });
     s += `<line class="sv-surf" x1="${sx(0)}" x2="${sx(L)}" y1="${sy(0)}" y2="${sy(0)}"/>`;
     s += `<polyline class="sv-bed" points="${poly}"/>`;
     pts.forEach(([x, d]) => (s += `<circle class="sv-bedpt" cx="${sx(x)}" cy="${sy(d)}" r="2.6"/>`));
     const showVel = !narrow || rows.length <= 8;
-    rows.forEach((r) => {
-      if (isFinite(r.d) && isFinite(r.h) && r.d > 0) {
+    rows.forEach((r, k) => {
+      const falta = !isFinite(r.d) || !isFinite(r.v);
+      if (falta) {
+        const yb = isFinite(r.d) && r.d > 0 ? sy(r.d) : sy(ymax * 0.7);
+        s += `<line class="sv-miss" x1="${sx(r.Lk)}" x2="${sx(r.Lk)}" y1="${sy(0)}" y2="${yb}"/><circle class="sv-missdot" cx="${sx(r.Lk)}" cy="${sy(0)}" r="5"/>`;
+      } else if (r.d > 0 && isFinite(r.h)) {
         s += `<circle class="sv-pt" cx="${sx(r.Lk)}" cy="${sy(r.d - r.h)}" r="4.5"/>`;
-        if (showVel && isFinite(r.v)) s += `<text class="sv-vel" x="${sx(r.Lk)}" y="${pt - 10}" text-anchor="middle">${fmt(r.v, 2)}</text>`;
       }
+      if (k !== curV && showVel && isFinite(r.v) && !falta) s += `<text class="sv-vel" x="${sx(r.Lk)}" y="${pt - 10}" text-anchor="middle">${fmt(r.v, 2)}</text>`;
+    });
+    // Vertical actual
+    const rc = rows[curV];
+    if (rc) {
+      const yb = isFinite(rc.d) && rc.d > 0 ? sy(rc.d) : sy(ymax * 0.7);
+      s += `<line class="sv-cur" x1="${sx(rc.Lk)}" x2="${sx(rc.Lk)}" y1="${sy(0)}" y2="${yb}"/>`;
+      s += `<circle class="sv-curlbl" cx="${sx(rc.Lk)}" cy="${pt - 13}" r="10"/><text class="sv-curtxt" x="${sx(rc.Lk)}" y="${pt - 9}" text-anchor="middle">${curV + 1}</text>`;
+    }
+    // Zonas para tocar cada vertical
+    rows.forEach((r, k) => {
+      const a = k === 0 ? 0 : (rows[k - 1].Lk + r.Lk) / 2;
+      const z = k === rows.length - 1 ? L : (r.Lk + rows[k + 1].Lk) / 2;
+      s += `<rect class="sv-hit" data-k="${k}" x="${sx(a).toFixed(1)}" y="0" width="${Math.max(1, sx(z) - sx(a)).toFixed(1)}" height="${H - pb}"><title>Vertical ${k + 1}</title></rect>`;
     });
     s += `</svg>`;
     box.innerHTML = s;
@@ -623,7 +826,7 @@ body{margin:0}[hidden]{display:none!important}
   let lastCart = null;
   const methods = {
     sec() {
-      const c = cartCalc(); lastCart = c;
+      const c = cartCalc(); lastCart = c; updateVCardInfo();
       if (!(c.L > 0) || !c.n) return { err: "Ingresa el espejo de agua y el número de intervalos." };
       const filled = c.rows.filter((r) => isFinite(r.d) && isFinite(r.v));
       if (!filled.length) return { err: "Anota la profundidad y la velocidad de al menos una vertical." };
@@ -731,12 +934,11 @@ body{margin:0}[hidden]{display:none!important}
     lastR = r.err ? null : r;
     if (r.err) {
       $("q-main").innerHTML = "—"; $("q-sub").textContent = ""; $("conv").innerHTML = ""; $("steps").innerHTML = "";
-      $("warns").innerHTML = `<p class="err">${r.err}</p>`; $("qbar-v").textContent = "—"; lastText = ""; return;
+      $("warns").innerHTML = `<p class="err">${r.err}</p>`; $("qbar-v").textContent = "—"; lastText = ""; qShown = NaN; return;
     }
     const Q = r.Q, Ls = Q * 1000, ds = Ls < 10 ? 3 : 2;
-    $("q-main").innerHTML = `${fmt(Ls, ds)}<small>L/s</small>`;
+    showQ(Ls, ds);
     $("q-sub").textContent = `${fmt(Q, 4)} m³/s` + (r.sub ? ` · ${r.sub}` : "");
-    $("qbar-v").textContent = `${fmt(Ls, ds)} L/s`;
     const rows = [["m³/s", fmt(Q, 6)], ["m³/h", fmt(Q * 3600, 2)], ["m³/día", fmt(Q * 86400, 1)], ["L/min", fmt(Ls * 60, 1)], ["GPM (US)", fmt(Q * 15850.3231, 1)]];
     $("conv").innerHTML = rows.map(([u, v]) => `<dt>${u}</dt><dd>${v}</dd>`).join("");
     $("steps").innerHTML = r.steps.map((s) => `<li>${s}</li>`).join("");
@@ -746,20 +948,54 @@ body{margin:0}[hidden]{display:none!important}
     lastText = head + `\nQ = ${fmt(Ls, 3)} L/s (${fmt(Q, 6)} m³/s)\n` + rows.slice(1).map(([u, v]) => `${v} ${u}`).join(" · ") + "\n" + r.steps.join("\n").replace(/<[^>]+>/g, "");
   }
 
+  // El caudal "cuenta" hasta su nuevo valor (se omite si el usuario prefiere menos movimiento).
+  let qShown = NaN, qAnim = 0;
+  function showQ(Ls, ds) {
+    const paint = (v) => { $("q-main").innerHTML = `${fmt(v, ds)}<small>L/s</small>`; $("qbar-v").textContent = `${fmt(v, ds)} L/s`; };
+    cancelAnimationFrame(qAnim);
+    const from = qShown; qShown = Ls;
+    if (!isFinite(from) || from === Ls || matchMedia("(prefers-reduced-motion: reduce)").matches) { paint(Ls); return; }
+    const t0 = performance.now(), dur = 380;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      paint(from + (Ls - from) * e);
+      if (k < 1) qAnim = requestAnimationFrame(step);
+    };
+    qAnim = requestAnimationFrame(step);
+  }
+
+  const OTROS = { vol: "Volumétrico", flot: "Flotador", vert: "Vertedero", par: "Parshall" };
   function select(m) {
     current = m;
-    document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", t.dataset.m === m ? "true" : "false"));
+    document.querySelectorAll(".tab[data-m]").forEach((t) => t.setAttribute("aria-selected", t.dataset.m === m ? "true" : "false"));
+    $("t-more").setAttribute("aria-selected", OTROS[m] ? "true" : "false");
+    $("t-more-txt").textContent = OTROS[m] || "Otros métodos";
+    $("more-menu").hidden = true; $("t-more").setAttribute("aria-expanded", "false");
     document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== m));
+    document.querySelector(".wrap").classList.toggle("flow", m === "sec");
     $("copy-xls").hidden = m !== "sec";
     showDest();
     $("clear").hidden = m !== "sec";
     try { localStorage.setItem("aforo-metodo", m); } catch (e) {}
-    compute();
+    if (m === "sec") setStep(curStep);
+    else { $("result").hidden = false; $("qbar").hidden = false; compute(); }
   }
-  document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => select(t.dataset.m)));
+  document.querySelectorAll(".tab[data-m]").forEach((t) => t.addEventListener("click", () => select(t.dataset.m)));
+  $("t-more").addEventListener("click", () => {
+    const open = $("more-menu").hidden;
+    $("more-menu").hidden = !open;
+    $("t-more").setAttribute("aria-expanded", open ? "true" : "false");
+  });
   $("inputs").addEventListener("input", compute);
   $("inputs").addEventListener("change", compute);
-  $("qbar-go").addEventListener("click", () => $("result").scrollIntoView({ behavior: "smooth", block: "start" }));
+  $("qbar-go").addEventListener("click", () => {
+    if (current === "sec") setStep(3);
+    else $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  // Aviso cuando no hay señal
+  const net = () => { $("offline").hidden = navigator.onLine; };
+  window.addEventListener("online", net); window.addEventListener("offline", net); net();
   let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (current === "sec") compute(); }, 200); });
 
   function copy(text, okMsg) {
@@ -796,7 +1032,8 @@ body{margin:0}[hidden]{display:none!important}
     ["c-sitio", "c-hi", "c-hf", "c-mi", "c-mf"].forEach((id) => ($(id).value = ""));
     $("c-fecha").value = new Date().toISOString().slice(0, 10);
     cart.d = []; cart.v = []; cart.p = [];
-    renderCartRows(); compute(); showDest();
+    curV = 0;
+    renderCartRows(); showDest(); setStep(1);
   });
 
   // =========================================================
@@ -890,7 +1127,7 @@ body{margin:0}[hidden]{display:none!important}
       return;
     }
     if (!sitioActual()) {
-      if (current === "sec") { msg.textContent = "Escribe el sitio de medición en «Datos del aforo»."; $("c-more").open = true; $("c-sitio").focus(); }
+      if (current === "sec") { setStep(1); $("c-more").open = true; $("c-sitio").focus(); msg.textContent = "Escribe el sitio de medición en «Datos del aforo»."; }
       else { msg.textContent = "Escribe el sitio de medición."; $("s-predio").focus(); }
       return;
     }
@@ -920,6 +1157,13 @@ body{margin:0}[hidden]{display:none!important}
   const isNum = (el) => el && el.tagName === "INPUT" && /^(decimal|numeric)$/.test(el.inputMode || el.getAttribute("inputmode") || "");
   const visible = (el) => el.offsetParent !== null && !el.closest("[hidden]");
   function nextField(el) {
+    // Tarjeta de vertical: profundidad → velocidad → profundidad de la vertical siguiente
+    if (el.dataset.vf) {
+      if (el.dataset.vf === "d") return $("vc-v");
+      if (el.dataset.vf === "p") return $("vc-d");
+      if (curV < nVerticals() - 1) { setV(curV + 1, false); return $("vc-d"); }
+      return null;
+    }
     if (el.dataset.f && el.dataset.k !== undefined) {
       const k = +el.dataset.k, f = el.dataset.f;
       const below = $(`c-${f}-${k + 1}`);
