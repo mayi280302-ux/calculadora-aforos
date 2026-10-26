@@ -379,7 +379,8 @@ body{margin:0}[hidden]{display:none!important}
         <div class="stack"><ol class="steps" id="steps"></ol></div>
       </details>
       <div class="save">
-        <label class="f">Predio
+        <p class="hint" id="s-dest"></p>
+        <label class="f" id="s-predio-w">Sitio de medición
           <input id="s-predio" type="text" autocomplete="off" placeholder="Ej.: La Esperanza"></label>
         <label class="f">Responsable <span class="unit">(opcional)</span>
           <input id="s-resp" type="text" autocomplete="off"></label>
@@ -745,6 +746,7 @@ body{margin:0}[hidden]{display:none!important}
     document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", t.dataset.m === m ? "true" : "false"));
     document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== m));
     $("copy-xls").hidden = m !== "sec";
+    showDest();
     $("clear").hidden = m !== "sec";
     try { localStorage.setItem("aforo-metodo", m); } catch (e) {}
     compute();
@@ -789,7 +791,7 @@ body{margin:0}[hidden]{display:none!important}
     ["c-sitio", "c-hi", "c-hf", "c-mi", "c-mf"].forEach((id) => ($(id).value = ""));
     $("c-fecha").value = new Date().toISOString().slice(0, 10);
     cart.d = []; cart.v = []; cart.p = [];
-    renderCartRows(); compute();
+    renderCartRows(); compute(); showDest();
   });
 
   // =========================================================
@@ -805,7 +807,17 @@ body{margin:0}[hidden]{display:none!important}
   };
   $("s-predio").value = ls.get("aforo-predio", "");
   $("s-resp").value = ls.get("aforo-resp", "");
-  $("s-predio").addEventListener("input", () => ls.set("aforo-predio", $("s-predio").value));
+  $("s-predio").addEventListener("input", () => { ls.set("aforo-predio", $("s-predio").value); showDest(); });
+  // El sitio de medición es el nombre de la carpeta del predio. En molinete se toma de «Datos del aforo».
+  function sitioActual() { return (current === "sec" ? $("c-sitio").value : $("s-predio").value).trim(); }
+  function showDest() {
+    $("s-predio-w").hidden = current === "sec";
+    const s = sitioActual();
+    $("s-dest").innerHTML = current === "sec"
+      ? (s ? `Se guarda en la carpeta <strong>${esc(s)}</strong>.` : "Escribe el sitio de medición en «Datos del aforo».")
+      : "";
+  }
+  $("c-sitio").addEventListener("input", showDest);
   $("s-resp").addEventListener("input", () => ls.set("aforo-resp", $("s-resp").value));
 
   const pad = (n) => String(n).padStart(2, "0");
@@ -816,7 +828,7 @@ body{margin:0}[hidden]{display:none!important}
   function buildPayload() {
     const r = lastR; if (!r) return null;
     const now = nowParts();
-    const p = { id: newId(), predio: $("s-predio").value.trim(), responsable: $("s-resp").value.trim(),
+    const p = { id: newId(), predio: sitioActual(), responsable: $("s-resp").value.trim(),
       metodo: NAMES[current], q_ls: r.Q * 1000, q_m3s: r.Q, fecha: now.fecha, hora: now.hora, sitio: "",
       info: [], tabla: null, pasos: r.steps.map((s) => s.replace(/<[^>]+>/g, "")) };
     if (current === "sec") {
@@ -872,7 +884,11 @@ body{margin:0}[hidden]{display:none!important}
       msg.innerHTML = 'Para guardar en Drive abre la calculadora en <a href="https://mayi280302-ux.github.io/calculadora-aforos/" target="_blank" rel="noopener">mayi280302-ux.github.io/calculadora-aforos</a>.';
       return;
     }
-    if (!$("s-predio").value.trim()) { msg.textContent = "Escribe el nombre del predio."; $("s-predio").focus(); return; }
+    if (!sitioActual()) {
+      if (current === "sec") { msg.textContent = "Escribe el sitio de medición en «Datos del aforo»."; $("c-more").open = true; $("c-sitio").focus(); }
+      else { msg.textContent = "Escribe el sitio de medición."; $("s-predio").focus(); }
+      return;
+    }
     const p = buildPayload();
     if (!p) { msg.textContent = "Completa los datos del aforo antes de guardar."; return; }
     btn.disabled = true; btn.textContent = "Guardando…"; msg.textContent = "";
