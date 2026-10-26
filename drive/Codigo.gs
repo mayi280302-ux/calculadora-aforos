@@ -3,14 +3,14 @@
  * Recibe los aforos que envía la calculadora y los guarda en Google Drive:
  *
  *   Aforos AURPA/
- *     Resumen general de aforos – AURPA   (todos los aforos de todos los sitios)
- *     <Método>/                            (Molinete, Volumétrico, Flotador, Vertedero, Parshall)
- *     <Sitio>/
- *       Resumen de aforos – <Sitio>       (una fila por aforo, con enlace)
- *       <Sitio> – 2026-10-26/
- *         Aforo 08h15 · Molinete · 180,51 L/s
- *       <Sitio> – 2026-11-03/
- *         Aforo 09h40 · Molinete · 172,30 L/s
+ *     <Método>/                              (Molinete, Volumétrico, Flotador, Vertedero, Parshall)
+ *       Resumen de aforos – <Método>         (todos los sitios de ese método; no se mezclan métodos)
+ *       <Sitio>/
+ *         Resumen de aforos – <Sitio>        (una fila por aforo, con enlace)
+ *         <Sitio> – 2026-10-26/
+ *           Aforo 08h15 · Molinete · 180,51 L/s
+ *         <Sitio> – 2026-11-03/
+ *           Aforo 09h40 · Molinete · 172,30 L/s
  *
  * Se instala UNA vez desde la cuenta aurparecursohidrico@gmail.com
  * (Implementar → Nueva implementación → Aplicación web).
@@ -30,7 +30,8 @@ function doPost(e) {
     var lock = LockService.getScriptLock();
     lock.waitLock(20000);
     try {
-      var carpeta = carpetaPredio(predio, carpetaMetodo(nombreMetodo(a.metodo)));
+      var carpetaDelMetodo = carpetaMetodo(nombreMetodo(a.metodo));
+      var carpeta = carpetaPredio(predio, carpetaDelMetodo);
       var resumen = hojaResumen(carpeta, predio);
 
       // Si este aforo ya se había guardado (reintento sin señal), no se duplica.
@@ -47,9 +48,9 @@ function doPost(e) {
       ];
       resumen.appendRow([''].concat(fila));
       numerar(resumen);
-      var general = hojaResumenGeneral();
-      general.appendRow(['', carpeta.getName()].concat(fila).concat([dia.getUrl()]));
-      numerar(general);
+      var delMetodo = hojaResumenMetodo(carpetaDelMetodo);
+      delMetodo.appendRow(['', carpeta.getName()].concat(fila).concat([dia.getUrl()]));
+      numerar(delMetodo);
       return responder({ ok: true, carpeta: dia.getUrl(), nombre: dia.getName(), archivo: archivo.getUrl() });
     } finally {
       lock.releaseLock();
@@ -165,14 +166,13 @@ function hojaResumen(carpeta, predio) {
   return sh;
 }
 
-// Resumen general en "Aforos AURPA": todos los aforos de todos los sitios.
-function hojaResumenGeneral() {
-  var raiz = carpetaRaiz();
-  var nombre = 'Resumen general de aforos – AURPA';
-  var it = raiz.getFilesByName(nombre);
+// Resumen de cada método, dentro de su carpeta: todos los sitios de ESE método, sin mezclar métodos.
+function hojaResumenMetodo(carpetaDelMetodo) {
+  var nombre = 'Resumen de aforos – ' + carpetaDelMetodo.getName();
+  var it = carpetaDelMetodo.getFilesByName(nombre);
   if (it.hasNext()) return conNumero(SpreadsheetApp.open(it.next()).getSheets()[0]);
   var ss = SpreadsheetApp.create(nombre);
-  DriveApp.getFileById(ss.getId()).moveTo(raiz);
+  DriveApp.getFileById(ss.getId()).moveTo(carpetaDelMetodo);
   var sh = ss.getSheets()[0];
   sh.setName('Aforos');
   sh.appendRow(['No.', 'Sitio', 'Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado', 'Carpeta']);
@@ -216,17 +216,51 @@ function numerar(sh) {
 
 // Ejecutar UNA vez desde el editor (▷ Ejecutar → numerarTodo) para numerar los resúmenes que ya existen.
 function numerarTodo() {
-  numerar(hojaResumenGeneral());
+  var metodos = METODOS.map(normalizar);
   var recorrer = function (padre) {
     var it = padre.getFolders();
     while (it.hasNext()) {
       var carpeta = it.next();
       var f = carpeta.getFilesByName('Resumen de aforos – ' + carpeta.getName());
       if (f.hasNext()) numerar(conNumero(SpreadsheetApp.open(f.next()).getSheets()[0]));
-      else if (METODOS.map(normalizar).indexOf(normalizar(carpeta.getName())) >= 0) recorrer(carpeta);
+      if (metodos.indexOf(normalizar(carpeta.getName())) >= 0) recorrer(carpeta);
     }
   };
   recorrer(carpetaRaiz());
+}
+
+// Ejecutar UNA vez desde el editor (▷ Ejecutar → separarResumenPorMetodo):
+// reparte el antiguo "Resumen general de aforos – AURPA" en un resumen por método
+// y lo saca de la carpeta principal. Las filas se copian; el archivo viejo se deja
+// renombrado como "(antiguo)" para que lo borres tú cuando confirmes que todo está bien.
+function separarResumenPorMetodo() {
+  var raiz = carpetaRaiz();
+  var it = raiz.getFilesByName('Resumen general de aforos – AURPA');
+  if (!it.hasNext()) { Logger.log('No hay resumen general.'); return; }
+  var archivo = it.next();
+  var sh = conNumero(SpreadsheetApp.open(archivo).getSheets()[0]);
+  var n = sh.getLastRow() - 1;
+  if (n > 0) {
+    var datos = sh.getRange(2, 1, n, sh.getLastColumn()).getValues();
+    var cm = columna(sh, 'Método');
+    var porMetodo = {};
+    datos.forEach(function (fila) {
+      var m = nombreMetodo(cm ? fila[cm - 1] : '');
+      (porMetodo[m] = porMetodo[m] || []).push(fila);
+    });
+    Object.keys(porMetodo).forEach(function (m) {
+      var destino = hojaResumenMetodo(carpetaMetodo(m));
+      var ya = {}, ci = columna(destino, 'ID');
+      if (ci && destino.getLastRow() > 1) destino.getRange(2, ci, destino.getLastRow() - 1, 1).getValues().forEach(function (r) { ya[r[0]] = 1; });
+      var idCol = columna(sh, 'ID');
+      var nuevas = porMetodo[m].filter(function (f) { return !idCol || !ya[f[idCol - 1]]; });
+      if (nuevas.length) destino.getRange(destino.getLastRow() + 1, 1, nuevas.length, nuevas[0].length).setValues(nuevas);
+      numerar(destino);
+      Logger.log(m + ': ' + nuevas.length + ' filas');
+    });
+  }
+  archivo.setName('Resumen general de aforos – AURPA (antiguo)');
+  Logger.log('Listo. El resumen general quedó como "(antiguo)".');
 }
 
 function buscarPorId(sh, id) {
