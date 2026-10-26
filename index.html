@@ -166,6 +166,9 @@ svg { width: 100%; height: auto; display: block; }
 #warns:empty { display: none; }
 .err { color: var(--warn); font-weight: 700; margin: 0; }
 .actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.save { display: grid; gap: 10px; padding: 14px; border-radius: 12px; background: var(--brand-soft); }
+.save .hint a { color: var(--brand); font-weight: 700; }
+.save .pend { color: var(--warn); font-weight: 700; }
 
 /* Barra de caudal fija (solo móvil) */
 .qbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(0,0,0,.08); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 12px; }
@@ -375,8 +378,16 @@ body{margin:0}[hidden]{display:none!important}
         <summary>Cálculo paso a paso</summary>
         <div class="stack"><ol class="steps" id="steps"></ol></div>
       </details>
+      <div class="save">
+        <label class="f">Predio
+          <input id="s-predio" type="text" autocomplete="off" placeholder="Ej.: La Esperanza"></label>
+        <label class="f">Responsable <span class="unit">(opcional)</span>
+          <input id="s-resp" type="text" autocomplete="off"></label>
+        <button class="btn primary" id="s-save" type="button">Guardar en Drive de AURPA</button>
+        <p class="hint" id="s-msg"></p>
+      </div>
       <div class="actions">
-        <button class="btn primary" id="copy" type="button">Copiar resultado</button>
+        <button class="btn" id="copy" type="button">Copiar resultado</button>
         <button class="btn" id="copy-xls" type="button">Copiar tabla para Excel</button>
         <button class="btn ghost" id="clear" type="button">Nuevo aforo</button>
       </div>
@@ -384,7 +395,7 @@ body{margin:0}[hidden]{display:none!important}
     </aside>
   </div>
 
-  <p class="foot">Los datos se guardan solo en este dispositivo.</p>
+  <p class="foot">Mientras llenas el aforo, los datos se guardan en este dispositivo. Con "Guardar en Drive" quedan en la carpeta del predio.</p>
 </div>
 
 <div class="qbar" id="qbar">
@@ -707,10 +718,11 @@ body{margin:0}[hidden]{display:none!important}
   // =========================================================
   // RESULTADO
   // =========================================================
-  let current = "sec", lastText = "";
+  let current = "sec", lastText = "", lastR = null;
   const NAMES = { sec: "Molinete (sección media)", vol: "Volumétrico", flot: "Flotador", vert: "Vertedero", par: "Parshall" };
   function compute() {
     const r = methods[current]();
+    lastR = r.err ? null : r;
     if (r.err) {
       $("q-main").innerHTML = "—"; $("q-sub").textContent = ""; $("conv").innerHTML = ""; $("steps").innerHTML = "";
       $("warns").innerHTML = `<p class="err">${r.err}</p>`; $("qbar-v").textContent = "—"; lastText = ""; return;
@@ -779,6 +791,105 @@ body{margin:0}[hidden]{display:none!important}
     cart.d = []; cart.v = []; cart.p = [];
     renderCartRows(); compute();
   });
+
+  // =========================================================
+  // GUARDAR EN GOOGLE DRIVE (Apps Script de la cuenta de AURPA)
+  // Crea "Aforos AURPA/<Predio>/" y guarda una hoja por aforo.
+  // Sin señal, el aforo queda en cola y se envía al volver la conexión.
+  // =========================================================
+  const DRIVE_URL = "https://script.google.com/macros/s/AKfycbwAimkXGAbNx1It8W-h9XJI4cgf5SMYpZbVRr7XKpnmIvZ5tLIvgmXIep03_IP9_tWL/exec";   // URL de la aplicación web de Apps Script (…/exec)
+  const QKEY = "aforo-pendientes";
+  const ls = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+  $("s-predio").value = ls.get("aforo-predio", "");
+  $("s-resp").value = ls.get("aforo-resp", "");
+  $("s-predio").addEventListener("input", () => ls.set("aforo-predio", $("s-predio").value));
+  $("s-resp").addEventListener("input", () => ls.set("aforo-resp", $("s-resp").value));
+
+  const pad = (n) => String(n).padStart(2, "0");
+  function nowParts() { const d = new Date(); return { fecha: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, hora: `${pad(d.getHours())}:${pad(d.getMinutes())}` }; }
+  function newId() { return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8); }
+  function labelText(l) { return [...l.childNodes].filter((n) => n.nodeType === 3 || (n.classList && n.classList.contains("unit"))).map((n) => n.textContent).join(" ").replace(/\s+/g, " ").trim(); }
+
+  function buildPayload() {
+    const r = lastR; if (!r) return null;
+    const now = nowParts();
+    const p = { id: newId(), predio: $("s-predio").value.trim(), responsable: $("s-resp").value.trim(),
+      metodo: NAMES[current], q_ls: r.Q * 1000, q_m3s: r.Q, fecha: now.fecha, hora: now.hora, sitio: "",
+      info: [], tabla: null, pasos: r.steps.map((s) => s.replace(/<[^>]+>/g, "")) };
+    if (current === "sec") {
+      const c = lastCart;
+      p.fecha = $("c-fecha").value || now.fecha; p.hora = $("c-hi").value || now.hora; p.sitio = $("c-sitio").value.trim();
+      p.info = [["Sitio de medición", p.sitio], ["Fecha", p.fecha], ["Hora inicio", $("c-hi").value], ["Hora fin", $("c-hf").value],
+        ["Tipo de sección", tipo === "canal" ? "Canal (paredes medidas)" : "Río (orillas en cero)"], ["Espejo L (cm)", c.L], ["No. intervalos", c.n],
+        ["Ancho intervalos (cm)", c.b], ["% altura (defecto)", c.pctDef], ["Lectura de mira inicial (cm)", $("c-mi").value], ["Lectura de mira final (cm)", $("c-mf").value],
+        ["Área total (m²)", c.sa], ["Velocidad media (m/s)", c.vm]];
+      const R = (n, d) => (isFinite(n) ? Number(n.toFixed(d)) : "");
+      p.tabla = { encabezados: ["No.", "Distancia L (cm)", "Prof. total d (cm)", "% altura (desde fondo)", "Altura lectura (cm)", "Vel (m/s)", "Ancho faja b (m)", "Área faja (m²)", "Caudal faja q (m³/s)"],
+        filas: c.rows.map((x, k) => [k + 1, R(x.Lk, 2), R(x.d, 2), R(x.p, 2), R(x.h, 2), R(x.v, 4), R(x.bb, 3), R(x.A, 4), R(x.q, 5)]) };
+    } else {
+      p.info.push(["Fecha", now.fecha], ["Hora", now.hora]);
+      const panel = document.querySelector(`[data-panel="${current}"]`);
+      panel.querySelectorAll("label.f").forEach((l) => {
+        if (l.hidden || l.closest("[hidden]")) return;
+        const el = l.querySelector("input, select"); if (!el) return;
+        const val = el.tagName === "SELECT" ? el.options[el.selectedIndex].text : el.value;
+        p.info.push([labelText(l), val]);
+      });
+      panel.querySelectorAll(".chips").forEach((ch) => {
+        const t = ch.previousElementSibling ? ch.previousElementSibling.textContent.trim() : "Valores";
+        p.info.push([t, [...ch.querySelectorAll("input")].map((i) => i.value).filter(Boolean).join("; ")]);
+      });
+    }
+    return p;
+  }
+
+  async function send(p) {
+    const res = await fetch(DRIVE_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(p) });
+    const j = await res.json();
+    if (!j.ok) throw Object.assign(new Error(j.error || "Error del servidor"), { fatal: true });
+    return j;
+  }
+  function pendingMsg() {
+    const n = ls.get(QKEY, []).length;
+    return n ? ` <span class="pend">${n} aforo(s) pendiente(s) de enviar.</span>` : "";
+  }
+  async function flush() {
+    if (!DRIVE_URL || !navigator.onLine) return;
+    let q = ls.get(QKEY, []); if (!q.length) return;
+    const left = [];
+    for (const p of q) { try { await send(p); } catch (e) { if (!e.fatal) left.push(p); } }
+    ls.set(QKEY, left);
+    if (left.length < q.length) $("s-msg").innerHTML = `Se enviaron ${q.length - left.length} aforo(s) pendiente(s).` + pendingMsg();
+  }
+
+  $("s-save").addEventListener("click", async () => {
+    const btn = $("s-save"), msg = $("s-msg");
+    if (!DRIVE_URL) { msg.textContent = "Falta conectar la calculadora con el Drive de AURPA."; return; }
+    if (/claude/i.test(location.hostname)) {
+      msg.innerHTML = 'Para guardar en Drive abre la calculadora en <a href="https://mayi280302-ux.github.io/calculadora-aforos/" target="_blank" rel="noopener">mayi280302-ux.github.io/calculadora-aforos</a>.';
+      return;
+    }
+    if (!$("s-predio").value.trim()) { msg.textContent = "Escribe el nombre del predio."; $("s-predio").focus(); return; }
+    const p = buildPayload();
+    if (!p) { msg.textContent = "Completa los datos del aforo antes de guardar."; return; }
+    btn.disabled = true; btn.textContent = "Guardando…"; msg.textContent = "";
+    try {
+      const j = await send(p);
+      msg.innerHTML = `Guardado en la carpeta <a href="${esc(j.carpeta)}" target="_blank" rel="noopener">${esc(p.predio)}</a>.` + pendingMsg();
+    } catch (e) {
+      if (e.fatal) { msg.textContent = "No se guardó: " + e.message; }
+      else {
+        const q = ls.get(QKEY, []); q.push(p); ls.set(QKEY, q);
+        msg.innerHTML = "Sin conexión. El aforo quedó guardado en este dispositivo y se enviará solo cuando haya señal." + pendingMsg();
+      }
+    } finally { btn.disabled = false; btn.textContent = "Guardar en Drive de AURPA"; }
+  });
+  window.addEventListener("online", flush);
+  if (ls.get(QKEY, []).length) $("s-msg").innerHTML = pendingMsg().trim();
+  setTimeout(flush, 1500);
 
   loadCart();
   renderCartRows();
