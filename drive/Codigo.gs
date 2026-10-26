@@ -41,15 +41,18 @@ function doPost(e) {
 
       var dia = carpetaFecha(carpeta, a.fecha);
       var archivo = crearHojaAforo(dia, a, predio);
-      var fila = [
-        limpiar(a.fecha, 20), limpiar(a.hora, 10), limpiar(a.metodo, 40),
-        numero(a.q_ls), numero(a.q_m3s), limpiar(a.sitio, 80), limpiar(a.responsable, 80),
-        archivo.getUrl(), id, new Date()
-      ];
-      resumen.appendRow([''].concat(fila));
+      var valores = {
+        'Sitio': carpeta.getName(), 'Fecha': limpiar(a.fecha, 20), 'Hora': limpiar(a.hora, 10), 'Método': limpiar(a.metodo, 40),
+        'Caudal (L/s)': numero(a.q_ls), 'Caudal (m³/s)': numero(a.q_m3s),
+        'Mira inicial (cm)': numero(a.mira_ini != null ? a.mira_ini : dato(a, /mira inicial/i)),
+        'Mira final (cm)': numero(a.mira_fin != null ? a.mira_fin : dato(a, /mira final/i)),
+        'Sitio de medición': limpiar(a.sitio, 80), 'Responsable': limpiar(a.responsable, 80),
+        'Archivo': archivo.getUrl(), 'ID': id, 'Guardado': new Date(), 'Carpeta': dia.getUrl()
+      };
+      agregarFila(resumen, valores);
       numerar(resumen);
       var delMetodo = hojaResumenMetodo(carpetaDelMetodo);
-      delMetodo.appendRow(['', carpeta.getName()].concat(fila).concat([dia.getUrl()]));
+      agregarFila(delMetodo, valores);
       numerar(delMetodo);
       return responder({ ok: true, carpeta: dia.getUrl(), nombre: dia.getName(), archivo: archivo.getUrl() });
     } finally {
@@ -154,15 +157,16 @@ function carpetaFecha(carpetaSitio, fecha) {
 function hojaResumen(carpeta, predio) {
   var nombre = 'Resumen de aforos – ' + carpeta.getName();
   var it = carpeta.getFilesByName(nombre);
-  if (it.hasNext()) return conNumero(SpreadsheetApp.open(it.next()).getSheets()[0]);
+  if (it.hasNext()) return conMira(conNumero(SpreadsheetApp.open(it.next()).getSheets()[0]));
   var ss = SpreadsheetApp.create(nombre);
   DriveApp.getFileById(ss.getId()).moveTo(carpeta);
   var sh = ss.getSheets()[0];
   sh.setName('Aforos');
-  sh.appendRow(['No.', 'Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado']);
-  sh.getRange(1, 1, 1, 11).setFontWeight('bold').setBackground('#e6f3e2');
+  var enc = ['No.', 'Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Mira inicial (cm)', 'Mira final (cm)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado'];
+  sh.appendRow(enc);
+  sh.getRange(1, 1, 1, enc.length).setFontWeight('bold').setBackground('#e6f3e2');
   sh.setFrozenRows(1);
-  sh.hideColumns(10);  // ID interno
+  sh.hideColumns(columna(sh, 'ID'));  // ID interno
   return sh;
 }
 
@@ -170,17 +174,86 @@ function hojaResumen(carpeta, predio) {
 function hojaResumenMetodo(carpetaDelMetodo) {
   var nombre = 'Resumen de aforos – ' + carpetaDelMetodo.getName();
   var it = carpetaDelMetodo.getFilesByName(nombre);
-  if (it.hasNext()) return conNumero(SpreadsheetApp.open(it.next()).getSheets()[0]);
+  if (it.hasNext()) return conMira(conNumero(SpreadsheetApp.open(it.next()).getSheets()[0]));
   var ss = SpreadsheetApp.create(nombre);
   DriveApp.getFileById(ss.getId()).moveTo(carpetaDelMetodo);
   var sh = ss.getSheets()[0];
   sh.setName('Aforos');
-  sh.appendRow(['No.', 'Sitio', 'Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado', 'Carpeta']);
-  sh.getRange(1, 1, 1, 13).setFontWeight('bold').setBackground('#e6f3e2');
+  var enc = ['No.', 'Sitio', 'Fecha', 'Hora', 'Método', 'Caudal (L/s)', 'Caudal (m³/s)', 'Mira inicial (cm)', 'Mira final (cm)', 'Sitio de medición', 'Responsable', 'Archivo', 'ID', 'Guardado', 'Carpeta'];
+  sh.appendRow(enc);
+  sh.getRange(1, 1, 1, enc.length).setFontWeight('bold').setBackground('#e6f3e2');
   sh.setFrozenRows(1);
-  sh.hideColumns(8);   // repite el sitio
-  sh.hideColumns(11);  // ID interno
+  sh.hideColumns(columna(sh, 'Sitio de medición'));  // repite el sitio
+  sh.hideColumns(columna(sh, 'ID'));                 // ID interno
   return sh;
+}
+
+// ---------- columnas de mira ----------
+// Resúmenes creados antes: se agregan "Mira inicial (cm)" y "Mira final (cm)" junto al caudal.
+function conMira(sh) {
+  if (columna(sh, 'Mira inicial (cm)')) return sh;
+  var c = columna(sh, 'Caudal (m³/s)') || columna(sh, 'Caudal (L/s)') || sh.getLastColumn();
+  sh.insertColumnsAfter(c, 2);
+  sh.getRange(1, c + 1, 1, 2).setValues([['Mira inicial (cm)', 'Mira final (cm)']]).setFontWeight('bold').setBackground('#e6f3e2');
+  return sh;
+}
+
+// Agrega una fila poniendo cada valor bajo la columna de su mismo nombre.
+function agregarFila(sh, valores) {
+  var enc = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  sh.appendRow(enc.map(function (h) { h = String(h).trim(); return Object.prototype.hasOwnProperty.call(valores, h) ? valores[h] : ''; }));
+}
+
+// Busca un dato en la lista "info" del aforo (p. ej. "Lectura de mira inicial (cm)").
+function dato(a, patron) {
+  var info = a.info || [];
+  for (var i = 0; i < info.length; i++) if (info[i] && patron.test(String(info[i][0]))) return info[i][1];
+  return '';
+}
+
+// Ejecutar UNA vez desde el editor (▷ Ejecutar → completarMiras):
+// llena las columnas de mira de los resúmenes leyendo la hoja de cada aforo ya guardado.
+function completarMiras() {
+  var metodos = METODOS.map(normalizar), cache = {}, llenos = 0;
+  var leerMiras = function (url) {
+    if (cache[url]) return cache[url];
+    var r = { ini: '', fin: '' };
+    try {
+      var vals = SpreadsheetApp.openByUrl(url).getSheets()[0].getRange('A1:B40').getValues();
+      vals.forEach(function (f) {
+        var k = String(f[0]);
+        if (/mira inicial/i.test(k)) r.ini = numero(f[1]);
+        if (/mira final/i.test(k)) r.fin = numero(f[1]);
+      });
+    } catch (e) {}
+    return (cache[url] = r);
+  };
+  var completar = function (sh) {
+    conMira(sh);
+    var n = sh.getLastRow() - 1; if (n < 1) return;
+    var ca = columna(sh, 'Archivo'), ci = columna(sh, 'Mira inicial (cm)'), cf = columna(sh, 'Mira final (cm)');
+    var arch = sh.getRange(2, ca, n, 1).getValues(), mi = sh.getRange(2, ci, n, 1).getValues(), mf = sh.getRange(2, cf, n, 1).getValues();
+    for (var i = 0; i < n; i++) {
+      if (mi[i][0] !== '' || mf[i][0] !== '' || !arch[i][0]) continue;
+      var m = leerMiras(String(arch[i][0]));
+      mi[i][0] = m.ini; mf[i][0] = m.fin;
+      if (m.ini !== '' || m.fin !== '') llenos++;
+    }
+    sh.getRange(2, ci, n, 1).setValues(mi); sh.getRange(2, cf, n, 1).setValues(mf);
+  };
+  var it = carpetaRaiz().getFolders();
+  while (it.hasNext()) {
+    var metodo = it.next();
+    if (metodos.indexOf(normalizar(metodo.getName())) < 0) continue;
+    completar(hojaResumenMetodo(metodo));
+    var sitios = metodo.getFolders();
+    while (sitios.hasNext()) {
+      var s = sitios.next();
+      var f = s.getFilesByName('Resumen de aforos – ' + s.getName());
+      if (f.hasNext()) completar(conMira(conNumero(SpreadsheetApp.open(f.next()).getSheets()[0])));
+    }
+  }
+  Logger.log('Filas con mira completada: ' + llenos);
 }
 
 // ---------- columna "No." ----------
@@ -248,15 +321,21 @@ function separarResumenPorMetodo() {
       var m = nombreMetodo(cm ? fila[cm - 1] : '');
       (porMetodo[m] = porMetodo[m] || []).push(fila);
     });
+    var encOrigen = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
+    var idCol = columna(sh, 'ID');
     Object.keys(porMetodo).forEach(function (m) {
       var destino = hojaResumenMetodo(carpetaMetodo(m));
       var ya = {}, ci = columna(destino, 'ID');
       if (ci && destino.getLastRow() > 1) destino.getRange(2, ci, destino.getLastRow() - 1, 1).getValues().forEach(function (r) { ya[r[0]] = 1; });
-      var idCol = columna(sh, 'ID');
       var nuevas = porMetodo[m].filter(function (f) { return !idCol || !ya[f[idCol - 1]]; });
-      if (nuevas.length) destino.getRange(destino.getLastRow() + 1, 1, nuevas.length, nuevas[0].length).setValues(nuevas);
+      // Copia columna por nombre (el destino puede tener columnas nuevas, como la mira).
+      var encDestino = destino.getRange(1, 1, 1, destino.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
+      var filas = nuevas.map(function (f) {
+        return encDestino.map(function (h) { var k = encOrigen.indexOf(h); return k >= 0 ? f[k] : ''; });
+      });
+      if (filas.length) destino.getRange(destino.getLastRow() + 1, 1, filas.length, encDestino.length).setValues(filas);
       numerar(destino);
-      Logger.log(m + ': ' + nuevas.length + ' filas');
+      Logger.log(m + ': ' + filas.length + ' filas');
     });
   }
   archivo.setName('Resumen general de aforos – AURPA (antiguo)');

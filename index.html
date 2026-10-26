@@ -1132,6 +1132,7 @@ body{margin:0}[hidden]{display:none!important}
     if (current === "sec") {
       const c = lastCart;
       p.fecha = $("c-fecha").value || now.fecha; p.hora = $("c-hi").value || now.hora; p.sitio = $("c-sitio").value.trim();
+      p.mira_ini = $("c-mi").value.trim(); p.mira_fin = $("c-mf").value.trim();
       p.info = [["Sitio de medición", p.sitio], ["Fecha", p.fecha], ["Hora inicio", $("c-hi").value], ["Hora fin", $("c-hf").value],
         ["Tipo de sección", tipo === "canal" ? "Canal (paredes medidas)" : "Río (orillas en cero)"], ["Espejo L (cm)", c.L], ["No. intervalos", c.n],
         ["Ancho intervalos (cm)", c.b], ["% altura (defecto)", c.pctDef], ["Lectura de mira inicial (cm)", $("c-mi").value], ["Lectura de mira final (cm)", $("c-mf").value],
