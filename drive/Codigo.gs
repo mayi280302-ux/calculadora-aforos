@@ -275,20 +275,29 @@ function reconstruirResumenMetodo() {
       var sh = conMira(conNumero(SpreadsheetApp.open(f.next()).getSheets()[0]));
       var n = sh.getLastRow() - 1; if (n < 1) continue;
       var encS = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
-      sh.getRange(2, 1, n, encS.length).getValues().forEach(function (r) {
+      var borrar = [];   // filas del resumen del sitio cuyo aforo se mandó a la papelera
+      sh.getRange(2, 1, n, encS.length).getValues().forEach(function (r, i) {
         var id = r[encS.indexOf('ID')];
-        if (id && vistos[id]) return;
-        if (id) vistos[id] = 1;
         var carpeta = '';
         var url = String(r[encS.indexOf('Archivo')] || '');
         var m = url.match(/\/d\/([A-Za-z0-9_-]+)/);
-        if (m) { try { var p = DriveApp.getFileById(m[1]).getParents(); if (p.hasNext()) carpeta = p.next().getUrl(); } catch (e) {} }
+        if (m) {
+          try {
+            var file = DriveApp.getFileById(m[1]);
+            if (file.isTrashed()) { borrar.push(i + 2); return; }
+            var p = file.getParents(); if (p.hasNext()) carpeta = p.next().getUrl();
+          } catch (e) { borrar.push(i + 2); return; }   // el archivo ya no existe
+        }
+        if (id && vistos[id]) return;
+        if (id) vistos[id] = 1;
         filas.push(encD.map(function (h) {
           if (h === 'Sitio') return s.getName();
           if (h === 'Carpeta') return carpeta;
           var k = encS.indexOf(h); return k >= 0 ? r[k] : '';
         }));
       });
+      borrar.reverse().forEach(function (fila) { sh.deleteRow(fila); });
+      if (borrar.length) { numerar(sh); Logger.log(s.getName() + ': se quitaron ' + borrar.length + ' aforo(s) borrados'); }
     }
     if (destino.getLastRow() > 1) destino.getRange(2, 1, destino.getLastRow() - 1, destino.getLastColumn()).clearContent();
     if (filas.length) destino.getRange(2, 1, filas.length, encD.length).setValues(filas);
