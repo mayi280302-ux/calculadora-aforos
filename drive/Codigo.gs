@@ -3,10 +3,12 @@
  * Recibe los aforos que envía la calculadora y los guarda en Google Drive:
  *
  *   Aforos AURPA/
- *     <Predio>/
- *       Resumen de aforos – <Predio>      (una fila por aforo, con enlace)
- *       Aforo 2026-10-26 08h15 · Molinete · 180,51 L/s
- *       Aforo 2026-11-03 09h40 · Molinete · 172,30 L/s
+ *     <Sitio>/
+ *       Resumen de aforos – <Sitio>       (una fila por aforo, con enlace)
+ *       <Sitio> – 2026-10-26/
+ *         Aforo 08h15 · Molinete · 180,51 L/s
+ *       <Sitio> – 2026-11-03/
+ *         Aforo 09h40 · Molinete · 172,30 L/s
  *
  * Se instala UNA vez desde la cuenta aurparecursohidrico@gmail.com
  * (Implementar → Nueva implementación → Aplicación web).
@@ -34,13 +36,14 @@ function doPost(e) {
       var previo = buscarPorId(resumen, id);
       if (previo) return responder({ ok: true, repetido: true, carpeta: carpeta.getUrl(), archivo: previo });
 
-      var archivo = crearHojaAforo(carpeta, a, predio);
+      var dia = carpetaFecha(carpeta, a.fecha);
+      var archivo = crearHojaAforo(dia, a, predio);
       resumen.appendRow([
         limpiar(a.fecha, 20), limpiar(a.hora, 10), limpiar(a.metodo, 40),
         numero(a.q_ls), numero(a.q_m3s), limpiar(a.sitio, 80), limpiar(a.responsable, 80),
         archivo.getUrl(), id, new Date()
       ]);
-      return responder({ ok: true, carpeta: carpeta.getUrl(), archivo: archivo.getUrl() });
+      return responder({ ok: true, carpeta: dia.getUrl(), nombre: dia.getName(), archivo: archivo.getUrl() });
     } finally {
       lock.releaseLock();
     }
@@ -77,6 +80,15 @@ function carpetaPredio(predio) {
   return raiz.createFolder(predio);
 }
 
+// Subcarpeta "<Sitio> – <fecha>" dentro de la carpeta del sitio.
+function carpetaFecha(carpetaSitio, fecha) {
+  var f = limpiarNombre(fecha, 20);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) f = Utilities.formatDate(new Date(), 'America/Bogota', 'yyyy-MM-dd');
+  var nombre = carpetaSitio.getName() + ' – ' + f;
+  var it = carpetaSitio.getFoldersByName(nombre);
+  return it.hasNext() ? it.next() : carpetaSitio.createFolder(nombre);
+}
+
 // ---------- resumen por predio ----------
 function hojaResumen(carpeta, predio) {
   var nombre = 'Resumen de aforos – ' + carpeta.getName();
@@ -103,7 +115,7 @@ function buscarPorId(sh, id) {
 // ---------- hoja de cada aforo ----------
 function crearHojaAforo(carpeta, a, predio) {
   var q = numero(a.q_ls);
-  var titulo = 'Aforo ' + limpiarNombre(a.fecha, 20) + ' ' + limpiarNombre(a.hora, 10).replace('-', 'h') +
+  var titulo = 'Aforo ' + limpiarNombre(a.hora, 10).replace('-', 'h') +
     ' · ' + limpiarNombre(a.metodo, 40) + ' · ' + (isFinite(q) ? String(Math.round(q * 100) / 100).replace('.', ',') : '—') + ' L/s';
   var ss = SpreadsheetApp.create(titulo);
   DriveApp.getFileById(ss.getId()).moveTo(carpeta);

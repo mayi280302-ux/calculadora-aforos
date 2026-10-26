@@ -894,7 +894,7 @@ body{margin:0}[hidden]{display:none!important}
     btn.disabled = true; btn.textContent = "Guardando…"; msg.textContent = "";
     try {
       const j = await send(p);
-      msg.innerHTML = `Guardado en la carpeta <a href="${esc(j.carpeta)}" target="_blank" rel="noopener">${esc(p.predio)}</a>.` + pendingMsg();
+      msg.innerHTML = `Guardado en la carpeta <a href="${esc(j.carpeta)}" target="_blank" rel="noopener">${esc(j.nombre || p.predio)}</a>.` + pendingMsg();
     } catch (e) {
       if (e.fatal) { msg.textContent = "No se guardó: " + e.message; }
       else {
